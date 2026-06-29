@@ -198,7 +198,7 @@ def generate_qa_pair(
                 "id": str(uuid.uuid4()),
                 "user_message": question,
                 "free_response": answer,
-                "free_model": f"mistralrs/{model}",
+                "free_model": f"llama.cpp/{model}",
                 "deepseek_response": "",
                 "timestamp": datetime.now(UTC).isoformat(),
                 "session_id": str(uuid.uuid4())[:8],
@@ -337,7 +337,7 @@ def generate_dataset(
     model: str = "qwen3.6-27b",
     num_pairs: int = 100,
     output_file: str = "dogfeed.jsonl",
-    mistralrs_host: str = "http://localhost:8080",
+    llm_host: str = "http://localhost:8080",
     topic_category: str = "all",
     hybrid_mode: bool = False,
     difficulty_sampling: bool = False,
@@ -350,7 +350,7 @@ def generate_dataset(
         model: Model name served by the LLM server.
         num_pairs: Number of Q&A pairs to generate.
         output_file: Output JSONL file path.
-        mistralrs_host: LLM server URL.
+        llm_host: LLM server URL.
         topic_category: Topic category (all, cs, physics, hybrid).
         hybrid_mode: Enable HF fallback for low-quality local generations.
         difficulty_sampling: Enable difficulty-aware sampling.
@@ -379,7 +379,7 @@ def generate_dataset(
     # --- Local LLM client ---
     client = None
     if not hf_only:
-        client = openai.OpenAI(base_url=f"{mistralrs_host}/v1", api_key="none")
+        client = openai.OpenAI(base_url=f"{llm_host}/v1", api_key="none")
 
     # --- Difficulty tracking ---
     al_tracker = None
@@ -397,7 +397,7 @@ def generate_dataset(
             client.models.list()
             logger.info(f"LLM server ready (model: {model})")
         except Exception as e:
-            logger.error(f"LLM server not reachable at {mistralrs_host}: {e}")
+            logger.error(f"LLM server not reachable at {llm_host}: {e}")
             sys.exit(1)
 
     # --- Select topics ---
@@ -529,7 +529,7 @@ if __name__ == "__main__":
         model=args.model,
         num_pairs=args.num,
         output_file=args.output,
-        mistralrs_host=args.host,
+        llm_host=args.host,
         topic_category=args.category,
         hybrid_mode=args.hybrid,
         difficulty_sampling=args.difficulty,

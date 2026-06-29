@@ -42,8 +42,8 @@ cfg = Config()
 SCRIPT_DIR = Path(__file__).parent.parent.parent  # repo root
 LOG_DIR = cfg.log_dir
 OUTPUT_DIR = cfg.output_dir
-MISTRALRS_MODEL = cfg.mistralrs_model
-MISTRALRS_HOST = cfg.mistralrs_host
+LLM_MODEL = cfg.llm_model
+LLM_HOST = cfg.llm_host
 
 PARALLEL_WORKERS = 5  # matches len(WORKERS_CONFIG)
 PAIRS_PER_WORKER = 5
@@ -51,11 +51,11 @@ RETRY_INTERVAL = cfg.retry_interval
 ROUND_TIMEOUT = cfg.round_timeout
 
 WORKERS_CONFIG = [
-    {"category": "cs", "topic_suffix": "cs", "model": MISTRALRS_MODEL},
-    {"category": "physics", "topic_suffix": "physics", "model": MISTRALRS_MODEL},
-    {"category": "all", "topic_suffix": "general", "model": MISTRALRS_MODEL},
-    {"category": "all", "topic_suffix": "math", "model": MISTRALRS_MODEL},
-    {"category": "all", "topic_suffix": "philosophy", "model": MISTRALRS_MODEL},
+    {"category": "cs", "topic_suffix": "cs", "model": LLM_MODEL},
+    {"category": "physics", "topic_suffix": "physics", "model": LLM_MODEL},
+    {"category": "all", "topic_suffix": "general", "model": LLM_MODEL},
+    {"category": "all", "topic_suffix": "math", "model": LLM_MODEL},
+    {"category": "all", "topic_suffix": "philosophy", "model": LLM_MODEL},
 ]
 
 # --- Shutdown state ---
@@ -84,7 +84,7 @@ def launch_worker(worker_id: int, config: dict) -> subprocess.Popen:
     output_file = OUTPUT_DIR / f"dogfeed_{config['topic_suffix']}_{timestamp}.jsonl"
     log_file = LOG_DIR / f"worker_{worker_id}_{config['topic_suffix']}.log"
 
-    model = config.get("model", MISTRALRS_MODEL)
+    model = config.get("model", LLM_MODEL)
     cmd = [
         sys.executable,
         "-m",
@@ -96,7 +96,7 @@ def launch_worker(worker_id: int, config: dict) -> subprocess.Popen:
         "--model",
         model,
         "--host",
-        MISTRALRS_HOST,
+        LLM_HOST,
         "--output",
         str(output_file),
     ]

@@ -14,6 +14,17 @@
 
 Generates high-quality, LLM-judge-validated Q&A pairs at scale — up to 7,200+ pairs/day on a single M3 MacBook. Built for self-hosters and open-source contributors who want to produce training data they can trust.
 
+## Numbers
+
+| Participants | Day | Week | Month | 6 Months | Year | 2 Years |
+|---|---|---|---|---|---|---|
+| 1 | 7.2K | 50.4K | 216K | 1.3M | 2.6M | 5.2M |
+| 50 | 360K | 2.5M | 10.8M | 65M | 131M | 262M |
+| 100 | 720K | 5M | 21.6M | 131M | 262M | 524M |
+| 1,000 | 7.2M | 50.4M | 216M | 1.3B | 2.6B | 5.2B |
+
+> *"The best way to predict the future is to generate it."*
+
 ## Quickstart
 
 ```bash
@@ -78,8 +89,8 @@ All settings are configured via environment variables — no config files needed
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `HF_TOKEN` | — | HuggingFace API token (required for upload + HF inference) |
-| `MISTRALRS_HOST` | `http://localhost:8080` | LLM server URL |
-| `MISTRALRS_MODEL` | `qwen3.6-27b` | Model name served by the server |
+| `LLM_HOST` | `http://localhost:8080` | LLM server URL |
+| `LLM_MODEL` | `qwen3.6-27b` | Model name served by the server |
 | `LLAMA_SERVER_BIN` | `/opt/homebrew/bin/llama-server` | llama.cpp binary path |
 | `ULTRAWHALE_MAX_WORKERS` | `8` | Maximum parallel workers |
 | `ULTRAWHALE_MIN_WORKERS` | `2` | Minimum parallel workers |

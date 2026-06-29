@@ -94,7 +94,7 @@ class TestGenerateIntegration:
             model="qwen3.6-27b",
             num_pairs=1,
             output_file=str(output_file),
-            mistralrs_host=mock_llm_server,
+            llm_host=mock_llm_server,
             topic_category="cs",
             skip_curation=True,
         )
@@ -135,7 +135,7 @@ class TestGenerateMultiplePairs:
             model="qwen3.6-27b",
             num_pairs=5,
             output_file=str(output_file),
-            mistralrs_host=mock_llm_server,
+            llm_host=mock_llm_server,
             topic_category="cs",
             skip_curation=True,
         )
@@ -157,7 +157,7 @@ class TestConfigIntegration:
         monkeypatch.setenv("HF_TOKEN", "hf_test_token_abc123")
 
         cfg = Config()
-        assert cfg.mistralrs_host == "http://test:9999"
+        assert cfg.llm_host == "http://test:9999"
         assert cfg.max_workers == 4
         assert cfg.min_quality_score == 0.75
         assert cfg.hf_token == "hf_test_token_abc123"
@@ -168,7 +168,7 @@ class TestConfigIntegration:
         from ultrawhale.config import Config
 
         cfg = Config()
-        assert cfg.mistralrs_host == "http://localhost:8080"
+        assert cfg.llm_host == "http://localhost:8080"
         assert cfg.max_workers == 8
         assert cfg.min_workers == 2
         assert cfg.min_quality_score == 0.65

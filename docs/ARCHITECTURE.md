@@ -3,7 +3,7 @@
 ## Data Flow
 
 ```
-LLM Server (llama.cpp / mistral.rs)
+LLM Server (llama.cpp / OpenAI-compatible)
         │
         ▼
 ┌──────────────────┐

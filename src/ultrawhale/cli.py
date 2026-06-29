@@ -18,7 +18,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
         model=args.model,
         num_pairs=args.num,
         output_file=args.output,
-        mistralrs_host=args.host,
+        llm_host=args.host,
         topic_category=args.category,
         hybrid_mode=args.hybrid,
         difficulty_sampling=args.difficulty,
@@ -68,7 +68,7 @@ def cmd_status(args: argparse.Namespace) -> int:
     else:
         logger.info("Configuration valid.")
 
-    logger.info(f"LLM server: {cfg.mistralrs_host} (model: {cfg.mistralrs_model})")
+    logger.info(f"LLM server: {cfg.llm_host} (model: {cfg.llm_model})")
     logger.info(f"HF token: {cfg.mask_token()}")
     logger.info(f"HF repo: {cfg.hf_repo}")
     logger.info(f"Log dir: {cfg.log_dir}")
@@ -80,7 +80,7 @@ def cmd_status(args: argparse.Namespace) -> int:
     try:
         import openai
 
-        client = openai.OpenAI(base_url=f"{cfg.mistralrs_host}/v1", api_key="none")
+        client = openai.OpenAI(base_url=f"{cfg.llm_host}/v1", api_key="none")
         models = client.models.list()
         logger.info(f"LLM server reachable — {len(models.data) if hasattr(models, 'data') else '?'} models")
     except Exception as e:

@@ -20,8 +20,12 @@ class Config:
     """
 
     # --- LLM server ---
-    mistralrs_host: str = field(default_factory=lambda: os.getenv("MISTRALRS_HOST", "http://localhost:8080"))
-    mistralrs_model: str = field(default_factory=lambda: os.getenv("MISTRALRS_MODEL", "qwen3.6-27b"))
+    llm_host: str = field(
+        default_factory=lambda: os.getenv("LLM_HOST", os.getenv("MISTRALRS_HOST", "http://localhost:8080"))
+    )
+    llm_model: str = field(
+        default_factory=lambda: os.getenv("LLM_MODEL", os.getenv("MISTRALRS_MODEL", "qwen3.6-27b"))
+    )
     llama_server_bin: str = field(
         default_factory=lambda: os.getenv("LLAMA_SERVER_BIN", "/opt/homebrew/bin/llama-server")
     )
@@ -51,9 +55,6 @@ class Config:
     retry_interval: int = field(default_factory=lambda: int(os.getenv("ULTRAWHALE_RETRY_INTERVAL", "30")))
     upload_interval: int = field(default_factory=lambda: int(os.getenv("ULTRAWHALE_UPLOAD_INTERVAL", "120")))
     upload_active_grace: int = field(default_factory=lambda: int(os.getenv("ULTRAWHALE_UPLOAD_GRACE", "5")))
-
-    # --- OVH (optional) ---
-    ovh_token_file: Path | None = field(default_factory=lambda: _resolve_ovh_token())
 
     def validate(self) -> list[str]:
         """Validate configuration and return list of warnings.
@@ -109,10 +110,3 @@ def _load_hf_token() -> str | None:
             pass
 
     return None
-
-
-def _resolve_ovh_token() -> Path | None:
-    """Resolve OVH token file path."""
-    path = os.getenv("OVH_TOKEN_FILE", str(Path.cwd() / ".ovh_ai_token"))
-    p = Path(path)
-    return p if p.exists() else None
