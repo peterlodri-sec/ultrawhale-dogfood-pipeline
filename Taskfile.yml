@@ -1,0 +1,150 @@
+version: '3'
+
+env:
+  SCRIPT_DIR: "{{.TASKFILE_DIR}}"
+
+tasks:
+
+  # ── E2E ───────────────────────────────────────────────────────────────────
+  run:
+    desc: "Start everything (server + workers + ralph + upload loop). Ctrl+C stops all."
+    cmds:
+      - caffeinate -i -m -u bash run.sh
+
+  stop:
+    desc: Stop everything (server + all workers + ralph + upload loop)
+    cmds:
+      - bash llm-server.sh stop || true
+      - pkill -f generate_dogfeed.py || true
+      - pkill -f ralph_parallel.py || true
+      - pkill -f upload_local_dogfeed.py || true
+      - pkill -f "upload_loop" || true
+      - echo "✓ All stopped"
+
+  status:
+    desc: Show status of all components
+    cmds:
+      - bash llm-server.sh status || true
+      - echo "--- workers ---"
+      - ps aux | grep -E "generate_dogfeed|ralph_parallel" | grep -v grep || echo "No workers"
+      - echo "--- recent worker1 ---"
+      - tail -3 /tmp/worker1.log 2>/dev/null || echo "(no log)"
+      - echo "--- recent worker2 ---"
+      - tail -3 /tmp/worker2.log 2>/dev/null || echo "(no log)"
+      - echo "--- recent ralph ---"
+      - tail -3 /tmp/ralph.log 2>/dev/null || echo "(no log)"
+      - echo "--- recent upload ---"
+      - tail -3 /tmp/upload.log 2>/dev/null || echo "(no log)"
+
+  logs:pretty:
+    desc: Stream colorized, structured logs
+    cmds:
+      - ./pretty_logs.sh
+
+  # ── Install ───────────────────────────────────────────────────────────────
+  install:
+    desc: Install Python dependencies (openai, huggingface_hub)
+    cmds:
+      - /opt/homebrew/bin/pip3 install openai huggingface_hub --break-system-packages
+      - echo "✓ Python deps installed"
+
+  # ── LLM Server ────────────────────────────────────────────────────────────
+  llm:start:
+    desc: Start llama.cpp server (Qwen3.6-27B Q4_K_M)
+    cmds:
+      - bash llm-server.sh start
+
+  llm:stop:
+    desc: Stop llama.cpp server
+    cmds:
+      - bash llm-server.sh stop
+
+  llm:status:
+    desc: Check llama.cpp server status
+    cmds:
+      - bash llm-server.sh status
+
+  llm:restart:
+    desc: Restart llama.cpp server
+    cmds:
+      - bash llm-server.sh restart
+
+  llm:logs:
+    desc: Tail llama.cpp server logs
+    cmds:
+      - bash llm-server.sh logs
+
+  # ── Dogfeed workers ───────────────────────────────────────────────────────
+  dogfeed:worker1:
+    desc: "Worker 1: CS topics, qwen3.6-27b, infinite loop"
+    cmds:
+      - 'nohup python3 -u generate_dogfeed.py --model qwen3.6-27b --host http://localhost:8080 --num 99999 --category cs --output dogfeed_cs_worker1_$(date +%Y-%m-%d).jsonl > /tmp/worker1.log 2>&1 & echo "Worker1 PID: $!"'
+
+  dogfeed:worker2:
+    desc: "Worker 2: all topics, qwen3.6-27b, infinite loop"
+    cmds:
+      - 'nohup python3 -u generate_dogfeed.py --model qwen3.6-27b --host http://localhost:8080 --num 99999 --category all --output dogfeed_general_worker2_$(date +%Y-%m-%d).jsonl > /tmp/worker2.log 2>&1 & echo "Worker2 PID: $!"'
+
+  dogfeed:start:
+    desc: Start both dogfeed workers
+    deps: [dogfeed:worker1, dogfeed:worker2]
+
+  dogfeed:stop:
+    desc: Kill all dogfeed workers
+    cmds:
+      - pkill -f generate_dogfeed.py || true
+      - echo "Workers stopped"
+
+  dogfeed:status:
+    desc: Show running workers and recent output
+    cmds:
+      - ps aux | grep generate_dogfeed | grep -v grep || echo "No workers running"
+      - echo "---"
+      - tail -5 /tmp/worker1.log 2>/dev/null || echo "worker1 log empty"
+      - echo "---"
+      - tail -5 /tmp/worker2.log 2>/dev/null || echo "worker2 log empty"
+
+  dogfeed:logs1:
+    desc: Tail worker 1 logs
+    cmds:
+      - tail -f /tmp/worker1.log
+
+  dogfeed:logs2:
+    desc: Tail worker 2 logs
+    cmds:
+      - tail -f /tmp/worker2.log
+
+  # ── Upload ────────────────────────────────────────────────────────────────
+  upload:
+    desc: Upload new dogfeed files to HuggingFace (one-shot)
+    cmds:
+      - python3 upload_local_dogfeed.py --dir . --active-grace 5
+      - python3 upload_local_dogfeed.py --dir dogfeed_parallel --active-grace 5 || true
+
+  upload:loop:
+    desc: Upload to HuggingFace every 5 minutes (runs forever)
+    cmds:
+      - |
+        while true; do
+          echo "[upload] $(date '+%H:%M:%S') uploading..."
+          python3 upload_local_dogfeed.py --dir . --active-grace 5 2>&1 | tail -5 || true
+          python3 upload_local_dogfeed.py --dir dogfeed_parallel --active-grace 5 2>&1 | tail -5 || true
+          echo "[upload] sleeping 5min..."
+          sleep 300
+        done
+
+  # ── Ralph parallel loop ───────────────────────────────────────────────────
+  ralph:start:
+    desc: Start ralph parallel loop (infinite rounds)
+    cmds:
+      - 'nohup python3 -u ralph_parallel.py --mode fast --rounds 99999 --workers 5 --pairs-per-worker 5 > /tmp/ralph.log 2>&1 & echo "Ralph PID: $!"'
+
+  ralph:stop:
+    desc: Kill ralph loop
+    cmds:
+      - pkill -f ralph_parallel.py || true
+
+  ralph:logs:
+    desc: Tail ralph loop logs
+    cmds:
+      - tail -f /tmp/ralph.log
