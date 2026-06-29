@@ -9,7 +9,7 @@ tasks:
   run:
     desc: "Start everything (server + workers + ralph + upload loop). Ctrl+C stops all."
     cmds:
-      - caffeinate -i -m -u bash run.sh
+      - bash run.sh
 
   stop:
     desc: Stop everything (server + all workers + ralph + upload loop)

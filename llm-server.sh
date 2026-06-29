@@ -35,8 +35,8 @@ cmd_start() {
         --mlock \
         --no-mmap \
         --min-p 0.1 \
-        --cache-type-k q8_0 \
-        --cache-type-v q8_0 \
+        --cache-type-k f16 \
+        --cache-type-v f16 \
         --reasoning off \
         >> "$LOG_FILE" 2>&1 &
 

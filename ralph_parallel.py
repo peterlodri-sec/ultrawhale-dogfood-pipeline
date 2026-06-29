@@ -59,7 +59,18 @@ def launch_worker(worker_id: int, config: dict) -> subprocess.Popen:
     ]
     print(f"[WORKER-{worker_id}] Launching {config['topic_suffix']} ({model}) → {output_file.name}")
 
+    # Ensure environment is loaded
     env = os.environ.copy()
+    if "HF_TOKEN" not in env:
+        try:
+            with open(SCRIPT_DIR / ".env", "r") as f:
+                for line in f:
+                    if "=" in line:
+                        k, v = line.strip().split("=", 1)
+                        env[k.strip()] = v.strip()
+        except FileNotFoundError:
+            pass
+
     with open(log_file, "w") as log_f:
         return subprocess.Popen(
             cmd,

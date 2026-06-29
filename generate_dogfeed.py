@@ -14,7 +14,7 @@ import tempfile
 import hashlib
 import queue
 import threading
-from datetime import datetime
+from curation_engine import CurationEngine
 from typing import Optional, Tuple
 
 try:
@@ -413,6 +413,9 @@ def generate_dataset(
     failed = 0
     scores = []
 
+    # Initialize Curation
+    curator = CurationEngine(os.getenv("HF_TOKEN"))
+
     for i in range(num_pairs):
         topic = topics[i % len(topics)]
 
@@ -446,11 +449,18 @@ def generate_dataset(
 
         if result:
             pair, score = result
-            q.put(pair)
-            generated += 1
-            scores.append(score)
-            if al_tracker and difficulty:
-                al_tracker.log_generation(topic, difficulty, True, score)
+            # Phase: SOTA-ULTRA Curation
+            curated_pair = curator.curate(pair)
+            if curated_pair:
+                q.put(curated_pair)
+                generated += 1
+                scores.append(curated_pair.get('curated_score', 0))
+                if al_tracker and difficulty:
+                    al_tracker.log_generation(topic, difficulty, True, score)
+            else:
+                failed += 1
+                if al_tracker and difficulty:
+                    al_tracker.log_generation(topic, difficulty, False, 0.0)
         else:
             failed += 1
             if al_tracker and difficulty:

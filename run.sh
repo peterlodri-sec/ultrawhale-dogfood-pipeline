@@ -9,7 +9,7 @@ cd "$SCRIPT_DIR"
 # Load .env if present (HF_TOKEN etc)
 [ -f .env ] && set -a && source .env && set +a
 
-UPLOAD_INTERVAL=300   # seconds between uploads
+UPLOAD_INTERVAL=120   # seconds between uploads
 PYTHON=python3
 PIDS=()
 
@@ -19,8 +19,10 @@ cleanup() {
     log "Shutting down..."
     # kill all tracked background pids
     for pid in "${PIDS[@]}"; do
-        kill "$pid" 2>/dev/null || true
+        kill -TERM "$pid" 2>/dev/null || true
     done
+    # Give them a moment to shut down gracefully
+    sleep 2
     # stop llm server via script
     bash llm-server.sh stop 2>/dev/null || true
     # kill any lingering workers
@@ -67,19 +69,21 @@ nohup nice -n -20 $PYTHON -u ralph_parallel.py \
 PIDS+=($!)
 log "Ralph PID: ${PIDS[-1]}"
 
-# ── 4. Upload loop (every 5 min) ──────────────────────────────────────────────
+# ── 4. Upload loop (every 2 min) ──────────────────────────────────────────────
 log "Starting upload loop (every ${UPLOAD_INTERVAL}s)..."
 upload_loop() {
+    # Run in subshell with renice to ensure zero interference
+    renice -n 19 -p $$ > /dev/null 2>&1
     while true; do
         sleep "$UPLOAD_INTERVAL"
         echo "[upload] $(date '+%H:%M:%S') uploading..."
-        $PYTHON upload_local_dogfeed.py \
+        # Use a nice value to ensure low I/O and CPU priority
+        nice -n 19 $PYTHON upload_local_dogfeed.py \
             --dir . \
             --active-grace 5 2>&1 | tail -5 || true
-        $PYTHON upload_local_dogfeed.py \
+        nice -n 19 $PYTHON upload_local_dogfeed.py \
             --dir dogfeed_parallel \
             --active-grace 5 2>&1 | tail -5 || true
-        echo "[upload] done."
     done
 }
 upload_loop > /tmp/upload.log 2>&1 &

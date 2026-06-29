@@ -3,7 +3,7 @@
 
 import os
 import sys
-from typing import Optional
+from typing import Optional, Dict
 
 try:
     from huggingface_hub import InferenceClient
@@ -37,29 +37,30 @@ class HFInferenceClient:
 
     def _chat(self, messages: list, model_key: str, max_tokens: int = 200) -> Optional[str]:
         """Chat completion via HF direct inference API (no provider routing)."""
-        model_id = self.MODELS.get(model_key, self.MODELS["llama70b"])
-        url = self.HF_API_URL.format(model_id=model_id)
+        model_id: str = self.MODELS.get(model_key, self.MODELS["llama70b"])
+        url: str = self.HF_API_URL.format(model_id=model_id)
         try:
-            resp = self._requests.post(
+            import requests as req
+            resp = req.post(
                 url,
                 headers={"Authorization": f"Bearer {self.token}", "Content-Type": "application/json"},
                 json={"messages": messages, "max_tokens": max_tokens, "temperature": 0.7},
                 timeout=25,
             )
             resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"].strip()
+            return str(resp.json()["choices"][0]["message"]["content"].strip())
         except Exception as e:
             print(f"[HF] chat failed ({model_key}@{model_id}): {e}", file=sys.stderr)
             return None
 
     def generate_question(self, topic: str, question_type: str = "conceptual", model_key: str = "llama70b") -> Optional[str]:
         """Generate question via HF Inference API."""
-        prompts = {
+        prompts: Dict[str, str] = {
             "conceptual": f"Generate a clear, fundamental question about {topic}. Focus on core concepts. Only output the question itself.",
             "practical": f"Generate a practical coding question related to {topic}. Only output the question itself.",
             "theoretical": f"Generate a theoretical question about {topic}. Only output the question itself.",
         }
-        prompt = prompts.get(question_type, prompts["conceptual"])
+        prompt: str = prompts.get(question_type, prompts["conceptual"])
         return self._chat([{"role": "user", "content": prompt}], model_key, max_tokens=100)
 
     def answer_question(self, question: str, model_key: str = "llama70b") -> Optional[str]:
