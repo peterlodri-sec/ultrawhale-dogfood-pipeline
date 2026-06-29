@@ -26,8 +26,8 @@ try:
     from ultrawhale.resources import ProcessManager, ResourceManager
 except ImportError:
     logger.debug("resource_manager not available — resource limits disabled")
-    ResourceManager = None  # type: ignore[assignment]
-    ProcessManager = None  # type: ignore[assignment]
+    ResourceManager = None  # type: ignore[misc,assignment]
+    ProcessManager = None  # type: ignore[misc,assignment]
 
 KOMPRESS_AVAILABLE = False
 try:
@@ -195,7 +195,7 @@ def run_fast_loop(rounds_per_cycle: int = 2) -> None:
     # --- Resource manager ---
     rm: ResourceManager | None = None
     pm: ProcessManager | None = None
-    if ResourceManager:
+    if ResourceManager is not None:
         rm = ResourceManager(
             max_memory_percent=cfg.max_memory_percent,
             max_cpu_percent=cfg.max_cpu_percent,

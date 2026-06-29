@@ -29,8 +29,7 @@ DIFFICULTY_PROMPTS: dict[str, dict[str, str]] = {
             "Focus on basic definitions and concepts. Keep it accessible."
         ),
         "practical": (
-            "Generate a simple coding question about {topic} with clear, basic "
-            "requirements. Suitable for learners."
+            "Generate a simple coding question about {topic} with clear, basic requirements. Suitable for learners."
         ),
         "definition": "Generate a question asking to define a fundamental concept in {topic} in simple terms.",
     },
@@ -40,8 +39,7 @@ DIFFICULTY_PROMPTS: dict[str, dict[str, str]] = {
             "concepts and relationships. Suitable for intermediate learners."
         ),
         "practical": (
-            "Generate a practical coding problem about {topic} with moderate "
-            "complexity and clear requirements."
+            "Generate a practical coding problem about {topic} with moderate complexity and clear requirements."
         ),
         "comparison": "Generate a comparison question contrasting two related concepts in {topic}.",
     },
@@ -217,11 +215,11 @@ class ActiveLearningTracker:
         """
         if topic and difficulty:
             stat = self.stats.get(difficulty, {}).get(topic, {})
-            total: int = stat.get("total", 0)
+            total = stat.get("total", 0)
             return stat.get("success", 0) / total if total else 0.0
 
         if difficulty:
-            entries = self.stats.get(difficulty, {}).values()
+            entries = list(self.stats.get(difficulty, {}).values())
         else:
             entries = [v for d in self.stats.values() for v in d.values()]
 

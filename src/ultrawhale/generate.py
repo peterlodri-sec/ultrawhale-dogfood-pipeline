@@ -130,7 +130,7 @@ def _truncate(text: str, max_len: int = 60) -> str:
 
 def _backoff_delay(attempt: int, base: float = 1.0, max_delay: float = 16.0) -> float:
     """Exponential backoff with jitter."""
-    delay = min(base * (2**attempt), max_delay)
+    delay: float = min(base * (2**attempt), max_delay)
     return delay * (0.5 + random.random())
 
 
@@ -392,7 +392,7 @@ def generate_dataset(
             difficulty_sampling = False
 
     # --- Verify server ---
-    if not hf_only:
+    if not hf_only and client is not None:
         try:
             client.models.list()
             logger.info(f"LLM server ready (model: {model})")

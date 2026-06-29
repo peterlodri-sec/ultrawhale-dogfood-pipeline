@@ -38,15 +38,16 @@ class HFInferenceClient:
         Raises:
             ValueError: When no token is available.
         """
+        self.token: str = ""
         if api_token:
-            self.token: str = api_token
+            self.token = api_token
         else:
             cfg = Config()
             if not cfg.hf_token:
                 raise ValueError(
                     "HF token is not available — set HF_TOKEN env var or provide an explicit api_token argument."
                 )
-            self.token: str = cfg.hf_token
+            self.token = cfg.hf_token
 
         logger.info("HFInferenceClient initialised (token present)")
 
