@@ -25,6 +25,18 @@ Generates high-quality, LLM-judge-validated Q&A pairs at scale — up to 7,200+ 
 
 > *"The best way to predict the future is to generate it."*
 
+## Live Stats — `PeetPedro/ultrawhale-dogfood`
+
+![files](https://img.shields.io/badge/files-291-blue)
+![range](https://img.shields.io/badge/range-Jun%2023%E2%80%9324%202026-lightgrey)
+![pairs](https://img.shields.io/badge/pairs-%7E2.9K-brightgreen)
+&nbsp; [![view](https://img.shields.io/badge/view_on_HF-yellow?logo=huggingface)](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood)
+
+#### random samples
+
+[chain-of-thought reasoning](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood/viewer/../resolve/main/dogfeed-loop-99-20260624-015219.jsonl)
+· [what is a dogfeed in ML?](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood/viewer/../resolve/main/dogfeed-loop-99-20260624-015219.jsonl)
+
 ## Quickstart
 
 ```bash
