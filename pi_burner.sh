@@ -111,26 +111,20 @@ find_sd_card() {
     echo "Detecting SD card device..."
     
     if [[ "$(uname)" == "Darwin" ]]; then
-        # macOS: list only physical external disks (exclude disk images)
-        echo "External physical disks:"
-        diskutil list physical external 2>/dev/null | grep -E "^/dev/disk[0-9]"
+        # macOS: show all external, user picks physical one (not disk image)
+        echo "External disks (insert SD card, look for 'external, physical'):"
+        diskutil list external 2>/dev/null
         echo ""
-        echo "Enter SD card device (e.g., /dev/disk2, NO disk images):"
+        echo "Enter SD card device (e.g., /dev/disk2, pick the one that says 'external, physical'):"
         read -r sd_device
         if [[ ! -b "$sd_device" ]]; then
             echo "Error: Invalid device selected."
             exit 1
         fi
-        # Confirm it's not a disk image
-        local disk_type
-        disk_type=$(diskutil info "$sd_device" 2>/dev/null | grep "Device Location" | awk '{print $NF}')
-        if [[ "$disk_type" == "Internal" ]]; then
-            echo "Warning: $sd_device is an internal disk, not an SD card!"
-            echo "Are you sure? (y/N)"
-            read -r confirm
-            if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-                exit 1
-            fi
+        # Verify it's a physical disk, not a disk image
+        if diskutil info "$sd_device" 2>/dev/null | grep -qiE "disk image|virtual"; then
+            echo "Error: '$sd_device' is a virtual/disk image, not an SD card."
+            exit 1
         fi
     else
         # Linux: use lsblk
