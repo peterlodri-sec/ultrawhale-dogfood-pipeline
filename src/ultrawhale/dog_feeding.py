@@ -153,23 +153,11 @@ except ImportError:
 # files for retry — they must survive reboots and process restarts.
 # ==============================================================================
 
-_DATA_ROOT: str = (
-    "/var/lib/dogfeeding"
-    if IS_PI
-    else os.path.join(os.getcwd(), ".dogfeeding")
-)
+_DATA_ROOT: str = "/var/lib/dogfeeding" if IS_PI else os.path.join(os.getcwd(), ".dogfeeding")
 
-CONFIG_PATH: str = (
-    "/boot/dog_feeding.conf"
-    if IS_PI
-    else os.path.join(_DATA_ROOT, "dog_feeding.conf")
-)
+CONFIG_PATH: str = "/boot/dog_feeding.conf" if IS_PI else os.path.join(_DATA_ROOT, "dog_feeding.conf")
 
-LOG_FILE: str = (
-    "/var/log/dog_feeding.log"
-    if IS_PI
-    else os.path.join(_DATA_ROOT, "dog_feeding.log")
-)
+LOG_FILE: str = "/var/log/dog_feeding.log" if IS_PI else os.path.join(_DATA_ROOT, "dog_feeding.log")
 
 LOCAL_TELEMETRY_DIR: str = os.path.join(_DATA_ROOT, "telemetry")
 LOCAL_DATASET_DIR: str = os.path.join(_DATA_ROOT, "datasets")
@@ -200,6 +188,7 @@ _DEFAULT_CONFIG: dict[str, Any] = {
 # ==============================================================================
 # CLASS: DogFeedingPipeline
 # ==============================================================================
+
 
 class DogFeedingPipeline:
     """Orchestrates feeding + dataset generation + background upload.
@@ -404,9 +393,7 @@ class DogFeedingPipeline:
                 self.logger.error("OpenRouter init failed: %s", exc)
                 self.openrouter = None
         else:
-            self.logger.info(
-                "OpenRouter not configured (set OPENROUTER_API_KEY for inference fallback)"
-            )
+            self.logger.info("OpenRouter not configured (set OPENROUTER_API_KEY for inference fallback)")
 
     # ── Pending upload scanning ─────────────────────────────────────────────────
 
@@ -491,12 +478,7 @@ class DogFeedingPipeline:
 
                 # ── Determine target path in HF repo ───────────────────────
                 abs_dir: str = os.path.dirname(os.path.abspath(filepath)).rstrip("/")
-                ts_safe: str = (
-                    datetime.now(UTC)
-                    .isoformat()
-                    .replace(":", "-")
-                    .replace(".", "-")
-                )
+                ts_safe: str = datetime.now(UTC).isoformat().replace(":", "-").replace(".", "-")
 
                 if abs_dir == os.path.abspath(LOCAL_DATASET_DIR).rstrip("/"):
                     target: str = f"datasets/{self.device_id}_{ts_safe}_{basename}"
@@ -677,12 +659,7 @@ class DogFeedingPipeline:
         os.makedirs(LOCAL_DATASET_DIR, exist_ok=True)
 
         dev: str = self.device_id
-        ts_safe: str = (
-            datetime.now(UTC)
-            .isoformat()
-            .replace(":", "-")
-            .replace(".", "-")
-        )
+        ts_safe: str = datetime.now(UTC).isoformat().replace(":", "-").replace(".", "-")
         label: str = name or "dataset"
         filepath: str = os.path.join(
             LOCAL_DATASET_DIR,
@@ -854,8 +831,7 @@ class DogFeedingPipeline:
         n_pairs: int = random.randint(3, 6)
 
         system_prompt: str = (
-            "You are a precise data generation assistant. "
-            "You always respond with valid JSON and nothing else."
+            "You are a precise data generation assistant. You always respond with valid JSON and nothing else."
         )
         user_prompt: str = (
             f"Generate {n_pairs} diverse question-answer pairs about {topic}. "
@@ -883,13 +859,9 @@ class DogFeedingPipeline:
                 if content:
                     parsed: list[dict[str, Any]] | None = self._extract_json(content)
                     if parsed:
-                        self.logger.info(
-                            "HF Inference: %d pairs on '%s'", len(parsed), topic
-                        )
+                        self.logger.info("HF Inference: %d pairs on '%s'", len(parsed), topic)
                         return parsed
-                    self.logger.warning(
-                        "HF Inference returned unparseable content: %.100s...", content
-                    )
+                    self.logger.warning("HF Inference returned unparseable content: %.100s...", content)
                 else:
                     self.logger.warning("HF Inference returned empty content")
 
@@ -915,13 +887,9 @@ class DogFeedingPipeline:
                 if content:
                     parsed = self._extract_json(content)
                     if parsed:
-                        self.logger.info(
-                            "OpenRouter: %d pairs on '%s'", len(parsed), topic
-                        )
+                        self.logger.info("OpenRouter: %d pairs on '%s'", len(parsed), topic)
                         return parsed
-                    self.logger.warning(
-                        "OpenRouter returned unparseable content: %.100s...", content
-                    )
+                    self.logger.warning("OpenRouter returned unparseable content: %.100s...", content)
                 else:
                     self.logger.warning("OpenRouter returned empty content")
 
@@ -966,9 +934,7 @@ class DogFeedingPipeline:
                 if IS_PI:
                     self.feed_dog()
                 else:
-                    self.logger.debug(
-                        "Skipping feed (generic mode, iteration %d)", iteration
-                    )
+                    self.logger.debug("Skipping feed (generic mode, iteration %d)", iteration)
 
                 # ── Generate dataset batch ─────────────────────────────────
                 batch: list[dict[str, Any]] = self._generate_dataset_batch()
@@ -979,23 +945,17 @@ class DogFeedingPipeline:
 
                 # ── Heartbeat every 10 iterations ──────────────────────────
                 if iteration % 10 == 0:
-                    self.logger.info(
-                        "Heartbeat: %d iterations completed", iteration
-                    )
+                    self.logger.info("Heartbeat: %d iterations completed", iteration)
 
                 # ── Sleep ──────────────────────────────────────────────────
-                self.logger.debug(
-                    "Cycle complete — sleeping %d seconds", self.schedule_interval
-                )
+                self.logger.debug("Cycle complete — sleeping %d seconds", self.schedule_interval)
                 time.sleep(self.schedule_interval)
 
             except KeyboardInterrupt:
                 self.logger.info("Scheduler stopped by user (Ctrl+C)")
                 break
             except Exception as exc:
-                self.logger.error(
-                    "Scheduler error at iteration %d: %s", iteration, exc
-                )
+                self.logger.error("Scheduler error at iteration %d: %s", iteration, exc)
                 time.sleep(60)  # avoid tight crash loop
 
         self.cleanup()
@@ -1028,6 +988,7 @@ class DogFeedingPipeline:
 # ==============================================================================
 # MAIN ENTRY POINT
 # ==============================================================================
+
 
 def main() -> None:
     """Application entry point.
