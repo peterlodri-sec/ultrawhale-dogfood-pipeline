@@ -170,14 +170,19 @@ End-to-end solution for dog feeding using Raspberry Pi 3B+.
    - HuggingFace event upload
 
 ### Usage
-1. Insert SD card
-2. `./pi_burner.sh`
-3. Insert into Pi 3B+
-4. Power on — feeding starts automatically
+```bash
+# E2E: clone → burn SD card
+task start
+# Or step by step:
+task pi:check     # Check dependencies
+task pi:burn      # Download, sign, burn SD card
+```
+
+Insert SD card → `task start` → insert into Pi 3B+ → power on.
 
 ### Security
 - Dataset signed with SHA256
 - Integrity verified on boot
 - No SSH, no user accounts
-- Secure erase script included
-- Ethernet-only (WiFi/BT disabled)
+- Secure erase script included (`/boot/erase_sd.sh` on Pi)
+- Ethernet-only (WiFi/BT disabled in config.txt)

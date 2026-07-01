@@ -148,3 +148,34 @@ tasks:
     desc: Tail ralph loop logs
     cmds:
       - tail -f /tmp/ralph.log
+
+  # ── Pi Dog Feeding Burner ──────────────────────────────────────────────
+  pi:check:
+    desc: "Check deps: xz, wget, huggingface_hub"
+    cmds:
+      - |
+        echo "=== Deps check ==="
+        for cmd in wget dd openssl xz; do
+          if command -v $cmd &>/dev/null; then echo "  ✓ $cmd"; else echo "  ✗ $cmd"; fi
+        done
+        if command -v sha256sum &>/dev/null; then echo "  ✓ sha256sum"; elif command -v shasum &>/dev/null; then echo "  ✓ shasum (macOS)"; else echo "  ✗ sha256sum/shasum"; fi
+        echo "---"
+        echo "SD cards:"
+        if [[ "$(uname)" == "Darwin" ]]; then diskutil list external 2>/dev/null; else lsblk 2>/dev/null || echo "(no lsblk)"; fi
+
+  pi:burn:
+    desc: "Download Pi OS → sign dataset → burn SD card → configure dog feeding"
+    cmds:
+      - bash pi_burner.sh
+
+  pi:setup:
+    desc: "Full setup: install deps + check + burn (e2e)"
+    deps: [install, pi:check]
+    cmds:
+      - task: pi:burn
+
+  # ── Top-level umbrella ─────────────────────────────────────────────────
+  start:
+    desc: "Start Pi dog feeding burner e2e (git clone → SD card ready)"
+    cmds:
+      - task: pi:setup

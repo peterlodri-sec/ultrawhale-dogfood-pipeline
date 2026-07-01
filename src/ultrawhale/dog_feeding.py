@@ -160,23 +160,34 @@ class DogFeedingPipeline:
         if not HF_AVAILABLE or not self.hf_api:
             self.logger.debug("HuggingFace not available, skipping upload")
             return
-            
+
         try:
-            # Example dataset name - should be configurable
-            dataset_name = f"dogfeeding/{self.config.get('device_id', 'dogfeeder-001')}"
-            
-            # Create simple JSON record
+            device_id = self.config.get("device_id", "dogfeeder-001")
+            timestamp = datetime.now().isoformat()
+            safe_ts = timestamp.replace(":", "-").replace(".", "-")
+
+            # Build JSONL record
             record = {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": timestamp,
                 "event_type": event_data.get("type", "unknown"),
-                "device_id": self.config.get("device_id", "unknown"),
+                "device_id": device_id,
                 "details": event_data
             }
-            
-            # In a real implementation, this would upload to HF dataset
-            # For now, just log the attempt
-            self.logger.info(f"HuggingFace upload attempted for event: {record}")
-            
+
+            # Upload to HF dataset's telemetry/ directory
+            repo_id = "PeetPedro/ultrawhale-dogfood"
+            path = f"telemetry/pi_{device_id}_{safe_ts}.jsonl"
+            content = json.dumps(record) + "\n"
+
+            self.hf_api.upload_file(
+                path_or_fileobj=content.encode(),
+                path_in_repo=path,
+                repo_id=repo_id,
+                repo_type="dataset"
+            )
+
+            self.logger.info(f"HuggingFace upload successful: {path}")
+
         except Exception as e:
             self.logger.error(f"HuggingFace upload failed: {e}")
     

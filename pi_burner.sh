@@ -12,15 +12,31 @@ readonly IMG_UNCOMPRESSED="/tmp/raspios-lite.img"
 readonly DATASET_SIG_FILE="/tmp/dataset_signature.sha256"
 readonly CLEANUP_DIRS="/tmp/raspios-lite.img.xz /tmp/raspios-lite.img /tmp/dataset_signature.sha256"
 
-# Check dependencies
+# Check dependencies (macOS + Linux)
 check_dependencies() {
-    local deps=("wget" "xz-utils" "sha256sum" "dd" "lsblk" "openssl")
-    for dep in "${deps[@]}"; do
-        if ! command -v "$dep" &> /dev/null; then
-            echo "Error: $dep is required but not installed."
+    local deps=("wget" "dd" "openssl")
+    # macOS uses shasum, Linux uses sha256sum
+    if ! command -v sha256sum &> /dev/null && ! command -v shasum &> /dev/null; then
+        echo "Error: sha256sum or shasum required."
+        exit 1
+    fi
+    # macOS uses xz via brew or xz binary
+    if ! command -v xz &> /dev/null && ! command -v unxz &> /dev/null; then
+        echo "Error: xz/unxz required. Install: brew install xz"
+        exit 1
+    fi
+    # macOS uses diskutil (built-in), Linux uses lsblk
+    if [[ "$(uname)" == "Darwin" ]]; then
+        if ! command -v diskutil &> /dev/null; then
+            echo "Error: diskutil not found (should be built-in on macOS)."
             exit 1
         fi
-    done
+    else
+        if ! command -v lsblk &> /dev/null; then
+            echo "Error: lsblk required on Linux."
+            exit 1
+        fi
+    fi
 }
 
 # Download Pi OS image
@@ -32,7 +48,11 @@ download_image() {
     local expected_sha256
     expected_sha256=$(wget -qO- "$PI_OS_SHA256_URL" | cut -d' ' -f1)
     local actual_sha256
-    actual_sha256=$(sha256sum "$IMG_FILE" | cut -d' ' -f1)
+    if command -v sha256sum &> /dev/null; then
+        actual_sha256=$(sha256sum "$IMG_FILE" | cut -d' ' -f1)
+    else
+        actual_sha256=$(shasum -a 256 "$IMG_FILE" | cut -d' ' -f1)
+    fi
     
     if [[ "$expected_sha256" != "$actual_sha256" ]]; then
         echo "Error: SHA256 mismatch. Download may be corrupted."
@@ -74,7 +94,11 @@ network_mode=ethernet_only
 EOF
     
     # Generate SHA256 hash
-    sha256sum "$temp_config" > "$DATASET_SIG_FILE"
+    if command -v sha256sum &> /dev/null; then
+        sha256sum "$temp_config" > "$DATASET_SIG_FILE"
+    else
+        shasum -a 256 "$temp_config" > "$DATASET_SIG_FILE"
+    fi
     
     # Cleanup
     rm "$temp_config"
@@ -82,25 +106,40 @@ EOF
     echo "Dataset signed."
 }
 
-# Find SD card device
+# Find SD card device (macOS + Linux)
 find_sd_card() {
     echo "Detecting SD card device..."
-    local sd_devices
-    sd_devices=$(lsblk -rno NAME,TYPE,MOUNTPOINT | grep -E "^sd[a-z]+ disk$" | awk '{print "/dev/" $1}')
     
-    if [[ -z "$sd_devices" ]]; then
-        echo "Error: No SD card detected."
-        exit 1
-    fi
-    
-    echo "Available SD cards:"
-    echo "$sd_devices"
-    echo "Please select the SD card device (e.g., /dev/sdb):"
-    read -r sd_device
-    
-    if [[ ! -b "$sd_device" ]]; then
-        echo "Error: Invalid device selected."
-        exit 1
+    if [[ "$(uname)" == "Darwin" ]]; then
+        # macOS: list disks, show external ones
+        echo "External disks on macOS:"
+        diskutil list external
+        echo ""
+        echo "Enter SD card device (e.g., /dev/disk2):"
+        read -r sd_device
+        if [[ ! -b "$sd_device" ]]; then
+            echo "Error: Invalid device selected."
+            exit 1
+        fi
+    else
+        # Linux: use lsblk
+        local sd_devices
+        sd_devices=$(lsblk -rno NAME,TYPE,MOUNTPOINT | grep -E "^sd[a-z]+ disk$" | awk '{print "/dev/" $1}')
+        
+        if [[ -z "$sd_devices" ]]; then
+            echo "Error: No SD card detected."
+            exit 1
+        fi
+        
+        echo "Available SD cards:"
+        echo "$sd_devices"
+        echo "Please select the SD card device (e.g., /dev/sdb):"
+        read -r sd_device
+        
+        if [[ ! -b "$sd_device" ]]; then
+            echo "Error: Invalid device selected."
+            exit 1
+        fi
     fi
     
     echo "Selected device: $sd_device"
@@ -125,8 +164,18 @@ second_burn() {
 # Configure SD card for dog feeding
 configure_sd_card() {
     echo "Configuring SD card for dog feeding pipeline..."
+    
+    # Determine correct partition name (macOS: disk2s1, Linux: mmcblk0p1 or sdb1)
+    local boot_part
+    if [[ "$(uname)" == "Darwin" ]]; then
+        boot_part="${sd_device}s1"
+    elif [[ "$sd_device" == *"mmcblk"* ]]; then
+        boot_part="${sd_device}p1"
+    else
+        boot_part="${sd_device}1"
+    fi
+    
     # Mount boot partition
-    local boot_part="${sd_device}1"
     sudo mkdir -p /mnt/boot
     sudo mount "$boot_part" /mnt/boot
     
@@ -173,6 +222,40 @@ network_mode=ethernet_only
 dataset_signature=$(cut -d' ' -f1 "$DATASET_SIG_FILE")
 EOF
     
+    # Create setup instructions for Pi
+    cat << 'EOF_SCRIPT' | sudo tee /mnt/boot/SETUP.txt
+=== Dog Feeding Pi - Setup Instructions ===
+
+After first boot:
+1. SSH is disabled. To enable temporarily:
+   - Remove SD card, add 'ssh' file to boot partition via another computer
+   - Or connect via serial console (UART pins 8/10)
+
+2. Install Python deps:
+   sudo apt update
+   sudo apt install -y python3-pip
+   pip3 install huggingface_hub RPi.GPIO
+
+3. Copy pipeline:
+   sudo cp /boot/dog_feeding.conf /etc/
+   sudo nano /etc/systemd/system/dogfeeding.service
+   (Add service file from this repo)
+
+4. Set HF_TOKEN:
+   export HF_TOKEN="your_hf_token_here"
+
+5. Run:
+   python3 /boot/dog_feeding.py  # or from repo install
+
+6. Verify:
+   /boot/verify_dataset.sh
+   Check /var/log/dog_feeding.log for events
+   Check https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood/tree/main/telemetry
+
+=== For automated first-boot setup (future) ===
+Edit setup_pi.sh and add to /etc/rc.local
+EOF_SCRIPT
+    
     # Create verification script for dataset
     cat << 'EOF_SCRIPT' | sudo tee /mnt/boot/verify_dataset.sh
 #!/bin/bash
@@ -187,14 +270,17 @@ fi
 # Extract expected signature
 EXPECTED_SIG=$(grep "dataset_signature" "$SIG_FILE" | cut -d' ' -f2)
 
-# Calculate actual signature
-ACTUAL_SIG=$(sha256sum /boot/dog_feeding.conf | cut -d' ' -f1)
+# Calculate SHA256 of config content WITHOUT the signature line
+# This avoids circular self-reference
+ACTUAL_SIG=$(grep -v "^dataset_signature" "$SIG_FILE" | sha256sum | cut -d' ' -f1)
 
 if [ "$EXPECTED_SIG" = "$ACTUAL_SIG" ]; then
     echo "Dataset verified successfully"
     exit 0
 else
     echo "ERROR: Dataset signature mismatch"
+    echo "Expected: $EXPECTED_SIG"
+    echo "Actual:   $ACTUAL_SIG"
     exit 1
 fi
 EOF_SCRIPT
@@ -213,8 +299,12 @@ EOF_SCRIPT
     
     sudo chmod +x /mnt/boot/erase_sd.sh
     
-    # Unmount
-    sudo umount /mnt/boot
+    # Unmount (macOS diskutil vs Linux umount)
+    if [[ "$(uname)" == "Darwin" ]]; then
+        sudo diskutil unmount "$boot_part"
+    else
+        sudo umount /mnt/boot
+    fi
     echo "SD card configured."
 }
 
