@@ -180,6 +180,8 @@ second_burn() {
     local sd_device="$1"
     local dd_device="$sd_device"
     if [[ "$(uname)" == "Darwin" ]]; then
+        # macOS remounts after first dd, unmount again
+        sudo diskutil unmountDisk "$sd_device" 2>/dev/null || true
         dd_device="/dev/r${sd_device#/dev/}"
     fi
     
