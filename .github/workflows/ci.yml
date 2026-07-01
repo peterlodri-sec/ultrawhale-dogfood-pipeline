@@ -8,5 +8,35 @@ on:
 
 jobs:
   ci:
-    uses: peterlodri-sec/.github/.github/workflows/shared-ci.yml@main
-    secrets: inherit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: uv sync --all-extras
+
+      - name: Lint (ruff)
+        run: uv run ruff check src/ tests/
+
+      - name: Format (ruff)
+        run: uv run ruff format --check src/ tests/
+
+      - name: Type check (mypy)
+        run: uv run mypy src/ --ignore-missing-imports
+
+      - name: Test (pytest)
+        run: uv run pytest --cov=src/ultrawhale --cov-report=term-missing -m "not requires_hf_token"
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
+      - name: Build
+        run: uv build
