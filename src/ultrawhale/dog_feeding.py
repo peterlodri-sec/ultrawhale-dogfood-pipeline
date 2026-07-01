@@ -9,8 +9,10 @@ import logging
 import json
 import os
 import subprocess
+import threading
+import glob
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 # Try to import RPi.GPIO, fallback to mock if not available
 try:
@@ -50,6 +52,7 @@ except ImportError:
 # Configuration
 CONFIG_PATH = "/boot/dog_feeding.conf"
 LOG_FILE = "/var/log/dog_feeding.log"
+LOCAL_TELEMETRY_DIR = "/var/lib/dogfeeding/telemetry"
 
 class DogFeedingPipeline:
     def __init__(self):
@@ -66,8 +69,10 @@ class DogFeedingPipeline:
         
         # Initialize HF if available
         self.hf_api = None
+        self._upload_queue: List[str] = []
         if HF_AVAILABLE:
             self._init_hf()
+            self._scan_pending_uploads()
         
         if GPIO_AVAILABLE:
             GPIO.setmode(GPIO.BCM)
@@ -87,6 +92,54 @@ class DogFeedingPipeline:
             self.logger.info("HuggingFace API initialized")
         except Exception as e:
             self.logger.error(f"HuggingFace initialization failed: {e}")
+
+    def _scan_pending_uploads(self):
+        """Scan for local telemetry files not yet uploaded. Spawn bg thread if found."""
+        os.makedirs(LOCAL_TELEMETRY_DIR, exist_ok=True)
+        pending = glob.glob(os.path.join(LOCAL_TELEMETRY_DIR, "*.jsonl"))
+        if not pending:
+            self.logger.info("No pending uploads found")
+            return
+
+        self.logger.info(f"Found {len(pending)} pending files. Starting upload thread...")
+        thread = threading.Thread(
+            target=self._upload_pending_worker,
+            args=(pending,),
+            daemon=True,
+            name="hf-uploader"
+        )
+        thread.start()
+
+    def _upload_pending_worker(self, files: List[str]):
+        """Background thread: upload pending files one by one, delete on success."""
+        self.logger.info(f"Upload worker: processing {len(files)} files")
+        for filepath in sorted(files):
+            try:
+                with open(filepath, 'r') as f:
+                    content = f.read()
+                
+                record = json.loads(content)
+                device_id = record.get("device_id", "unknown")
+                ts = record.get("timestamp", datetime.now().isoformat()).replace(":", "-").replace(".", "-")
+                fname = os.path.basename(filepath)
+
+                repo_id = "PeetPedro/ultrawhale-dogfood"
+                path = f"telemetry/pi_{device_id}_{ts}.jsonl"
+
+                self.hf_api.upload_file(
+                    path_or_fileobj=content.encode(),
+                    path_in_repo=path,
+                    repo_id=repo_id,
+                    repo_type="dataset"
+                )
+
+                os.remove(filepath)
+                self.logger.info(f"Uploaded + removed pending: {fname} → {path}")
+
+            except Exception as e:
+                self.logger.error(f"Failed to upload pending {filepath}: {e}")
+
+        self.logger.info("Upload worker: done")
     
     def _verify_dataset(self) -> bool:
         """Verify dataset integrity using embedded signature."""
@@ -156,9 +209,10 @@ class DogFeedingPipeline:
         return logger
     
     def _upload_to_hf(self, event_data: dict):
-        """Upload event data to HuggingFace dataset."""
+        """Upload event data to HuggingFace dataset. Falls back to local file."""
         if not HF_AVAILABLE or not self.hf_api:
-            self.logger.debug("HuggingFace not available, skipping upload")
+            self.logger.debug("HuggingFace not available, saving locally")
+            self._save_local_event(event_data)
             return
 
         try:
@@ -166,7 +220,6 @@ class DogFeedingPipeline:
             timestamp = datetime.now().isoformat()
             safe_ts = timestamp.replace(":", "-").replace(".", "-")
 
-            # Build JSONL record
             record = {
                 "timestamp": timestamp,
                 "event_type": event_data.get("type", "unknown"),
@@ -174,11 +227,11 @@ class DogFeedingPipeline:
                 "details": event_data
             }
 
-            # Upload to HF dataset's telemetry/ directory
             repo_id = "PeetPedro/ultrawhale-dogfood"
             path = f"telemetry/pi_{device_id}_{safe_ts}.jsonl"
             content = json.dumps(record) + "\n"
 
+            # Try HF upload
             self.hf_api.upload_file(
                 path_or_fileobj=content.encode(),
                 path_in_repo=path,
@@ -189,7 +242,28 @@ class DogFeedingPipeline:
             self.logger.info(f"HuggingFace upload successful: {path}")
 
         except Exception as e:
-            self.logger.error(f"HuggingFace upload failed: {e}")
+            self.logger.warning(f"HuggingFace upload failed: {e}. Saving locally.")
+            self._save_local_event(event_data)
+
+    def _save_local_event(self, event_data: dict):
+        """Write event to local file for later upload."""
+        os.makedirs(LOCAL_TELEMETRY_DIR, exist_ok=True)
+        ts = datetime.now().isoformat().replace(":", "-").replace(".", "-")
+        device_id = self.config.get("device_id", "dogfeeder-001")
+        fname = f"event_{device_id}_{ts}.jsonl"
+        fpath = os.path.join(LOCAL_TELEMETRY_DIR, fname)
+
+        record = {
+            "timestamp": datetime.now().isoformat(),
+            "event_type": event_data.get("type", "unknown"),
+            "device_id": device_id,
+            "details": event_data
+        }
+
+        with open(fpath, 'w') as f:
+            f.write(json.dumps(record) + "\n")
+
+        self.logger.info(f"Saved local event: {fpath}")
     
     def feed_dog(self) -> bool:
         """Execute one feeding cycle."""
