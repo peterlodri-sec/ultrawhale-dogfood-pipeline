@@ -53,6 +53,7 @@ except ImportError:
 CONFIG_PATH = "/boot/dog_feeding.conf"
 LOG_FILE = "/var/log/dog_feeding.log"
 LOCAL_TELEMETRY_DIR = "/var/lib/dogfeeding/telemetry"
+LOCAL_DATASET_DIR = "/var/lib/dogfeeding/datasets"
 
 class DogFeedingPipeline:
     def __init__(self):
@@ -94,14 +95,20 @@ class DogFeedingPipeline:
             self.logger.error(f"HuggingFace initialization failed: {e}")
 
     def _scan_pending_uploads(self):
-        """Scan for local telemetry files not yet uploaded. Spawn bg thread if found."""
+        """Scan local telemetry + dataset dirs. Spawn bg upload thread if anything found."""
         os.makedirs(LOCAL_TELEMETRY_DIR, exist_ok=True)
-        pending = glob.glob(os.path.join(LOCAL_TELEMETRY_DIR, "*.jsonl"))
+        os.makedirs(LOCAL_DATASET_DIR, exist_ok=True)
+
+        pending = []
+        pending += glob.glob(os.path.join(LOCAL_TELEMETRY_DIR, "*.jsonl"))
+        pending += glob.glob(os.path.join(LOCAL_DATASET_DIR, "*.jsonl"))
+        pending += glob.glob(os.path.join(LOCAL_DATASET_DIR, "*.json"))
+
         if not pending:
             self.logger.info("No pending uploads found")
             return
 
-        self.logger.info(f"Found {len(pending)} pending files. Starting upload thread...")
+        self.logger.info(f"Found {len(pending)} pending files (telemetry + datasets). Starting upload thread...")
         thread = threading.Thread(
             target=self._upload_pending_worker,
             args=(pending,),
@@ -111,30 +118,34 @@ class DogFeedingPipeline:
         thread.start()
 
     def _upload_pending_worker(self, files: List[str]):
-        """Background thread: upload pending files one by one, delete on success."""
+        """Bg thread: upload pending telemetry + datasets, delete on success."""
         self.logger.info(f"Upload worker: processing {len(files)} files")
         for filepath in sorted(files):
             try:
                 with open(filepath, 'r') as f:
                     content = f.read()
-                
-                record = json.loads(content)
-                device_id = record.get("device_id", "unknown")
-                ts = record.get("timestamp", datetime.now().isoformat()).replace(":", "-").replace(".", "-")
+
+                device_id = "dogfeeder-001"
+                ts = datetime.now().isoformat().replace(":", "-").replace(".", "-")
                 fname = os.path.basename(filepath)
+                dirname = os.path.dirname(filepath)
+
+                # Determine target path based on source directory
+                if dirname.rstrip("/") == LOCAL_DATASET_DIR.rstrip("/"):
+                    target = f"datasets/pi_{device_id}_{ts}_{fname}"
+                else:
+                    target = f"telemetry/pi_{device_id}_{ts}_{fname}"
 
                 repo_id = "PeetPedro/ultrawhale-dogfood"
-                path = f"telemetry/pi_{device_id}_{ts}.jsonl"
-
                 self.hf_api.upload_file(
                     path_or_fileobj=content.encode(),
-                    path_in_repo=path,
+                    path_in_repo=target,
                     repo_id=repo_id,
                     repo_type="dataset"
                 )
 
                 os.remove(filepath)
-                self.logger.info(f"Uploaded + removed pending: {fname} → {path}")
+                self.logger.info(f"Uploaded + removed: {fname} → {target}")
 
             except Exception as e:
                 self.logger.error(f"Failed to upload pending {filepath}: {e}")
@@ -264,6 +275,22 @@ class DogFeedingPipeline:
             f.write(json.dumps(record) + "\n")
 
         self.logger.info(f"Saved local event: {fpath}")
+
+    def save_dataset(self, data: List[Dict], name: str = None):
+        """Save a generated dataset locally for later upload."""
+        os.makedirs(LOCAL_DATASET_DIR, exist_ok=True)
+        ts = datetime.now().isoformat().replace(":", "-").replace(".", "-")
+        device_id = self.config.get("device_id", "dogfeeder-001")
+        label = name or "dataset"
+        fname = f"{label}_{device_id}_{ts}.jsonl"
+        fpath = os.path.join(LOCAL_DATASET_DIR, fname)
+
+        with open(fpath, 'w') as f:
+            for record in data:
+                f.write(json.dumps(record) + "\n")
+
+        self.logger.info(f"Saved local dataset ({len(data)} records): {fpath}")
+        return fpath
     
     def feed_dog(self) -> bool:
         """Execute one feeding cycle."""
