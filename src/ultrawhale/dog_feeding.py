@@ -846,7 +846,7 @@ class DogFeedingPipeline:
         if self.hf_inference:
             try:
                 self.logger.debug("Calling HF Inference: topic=%s n=%d", topic, n_pairs)
-                response = self.hf_inference.chat_completion(
+                hf_response = self.hf_inference.chat_completion(
                     model="Qwen/Qwen2.5-1.5B-Instruct",
                     messages=[
                         {"role": "system", "content": system_prompt},
@@ -855,7 +855,7 @@ class DogFeedingPipeline:
                     max_tokens=2048,
                     temperature=0.8,
                 )
-                content: str | None = response.choices[0].message.content
+                content: str | None = hf_response.choices[0].message.content
                 if content:
                     parsed: list[dict[str, Any]] | None = self._extract_json(content)
                     if parsed:
@@ -874,7 +874,7 @@ class DogFeedingPipeline:
         if self.openrouter:
             try:
                 self.logger.debug("Calling OpenRouter: topic=%s n=%d", topic, n_pairs)
-                response = self.openrouter.chat.completions.create(
+                or_response = self.openrouter.chat.completions.create(
                     model="meta-llama/llama-3.2-3b-instruct:free",
                     messages=[
                         {"role": "system", "content": system_prompt},
@@ -883,7 +883,7 @@ class DogFeedingPipeline:
                     max_tokens=2048,
                     temperature=0.8,
                 )
-                content = response.choices[0].message.content
+                content = or_response.choices[0].message.content
                 if content:
                     parsed = self._extract_json(content)
                     if parsed:
