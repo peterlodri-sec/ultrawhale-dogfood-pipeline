@@ -10,9 +10,9 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![HF Dataset](https://img.shields.io/badge/%20dataset-PeetPedro/ultrawhale--dogfood-yellow)](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood)
 
-**Industrial-grade Q&A data synthesis pipeline for training LLMs.**
+**Industrial-grade Q&A data synthesis pipeline for training LLMs — now with Pi-powered dog feeding.**
 
-Generates high-quality, LLM-judge-validated Q&A pairs at scale — up to 7,200+ pairs/day on a single M3 MacBook. Built for self-hosters and open-source contributors who want to produce training data they can trust.
+Generates high-quality, LLM-judge-validated Q&A pairs at scale — up to 7,200+ pairs/day on a single M3 MacBook. Built for self-hosters and open-source contributors who want to produce training data they can trust. Optionally burns to Raspberry Pi 3B+ for automated motor/servo feeding with real-time HuggingFace dataset upload.
 
 ## Numbers
 
@@ -59,6 +59,14 @@ ultrawhale status
 
 # Upload results to HuggingFace (requires HF_TOKEN)
 ultrawhale upload
+
+# --- Pi Dog Feeding ---
+# Burn SD card (insert card first)
+task start
+
+# Or step by step:
+task pi:check     # Check dependencies
+task pi:burn      # Download Pi OS, sign dataset, burn SD card
 ```
 
 ## Features
@@ -71,6 +79,8 @@ ultrawhale upload
 - **Async I/O** — Queue-based writer ensures generation is never blocked by disk I/O
 - **Resource Management** — Automatic CPU/memory monitoring prevents system crashes
 - **Kompress-v8** — Post-processing compression for compact dataset storage
+- **Pi Dog Feeding** — Burn Pi OS with signed dataset, GPIO motor/servo control, background HF upload on every cycle
+- **Dual-Mode** — Same code runs on Pi (GPIO feeding + dataset gen) or generic machine (dataset gen only)
 
 ## Architecture
 
@@ -97,6 +107,13 @@ ultrawhale upload
 │  ┌─────────────────────────────────────┐             │
 │  │    Kompress-v8 → HF Dataset Upload  │             │
 │  └─────────────────────────────────────┘             │
+│                                                       │
+│  ┌─────────────────────────────────────┐             │
+│  │  Pi Feeder Node (optional)          │             │
+│  │  GPIO motor/servo → telemetry/      │             │
+│  │  LLM gen → datasets/                │             │
+│  │  bg upload thread → HF              │             │
+│  └─────────────────────────────────────┘             │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -107,6 +124,7 @@ All settings are configured via environment variables — no config files needed
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `HF_TOKEN` | — | HuggingFace API token (required for upload + HF inference) |
+| `OPENROUTER_API_KEY` | — | OpenRouter key (free inference fallback if HF Inference API down) |
 | `LLM_HOST` | `http://localhost:8080` | LLM server URL |
 | `LLM_MODEL` | `qwen3.6-27b` | Model name served by the server |
 | `LLAMA_SERVER_BIN` | `/opt/homebrew/bin/llama-server` | llama.cpp binary path |
@@ -123,6 +141,10 @@ ultrawhale generate   # Generate Q&A pairs
 ultrawhale upload     # Upload dogfeed to HuggingFace
 ultrawhale compress   # Post-process with kompress-v8
 ultrawhale status     # Pipeline health check
+
+task start            # E2E: insert SD → burn Pi OS → sign dataset → configure
+task pi:check         # Check Pi burner dependencies
+task pi:burn          # Download Pi OS, sign, dual-burn SD card
 ```
 
 ## Development
@@ -132,6 +154,9 @@ git clone https://github.com/peterlodri-sec/ultrawhale-dogfood-pipeline.git
 cd ultrawhale-dogfood-pipeline
 uv sync --all-extras
 uv run pytest
+
+# Test dog feeding pipeline in generic mode (no Pi needed)
+HF_TOKEN=your_token python3 src/ultrawhale/dog_feeding.py
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details on setup, workflow, and PR process.
@@ -145,44 +170,26 @@ MIT — see [LICENSE](LICENSE).
 
 ## Pi Dog Feeding Burner
 
-End-to-end solution for dog feeding using Raspberry Pi 3B+.
-
-### Features
-- Automated dog feeding schedule
-- GPIO control for motor/servo
-- Secure SD card burning with dataset signing
-- Headless operation (Ethernet only)
-- Secure erase functionality
-- HuggingFace dataset upload integration
+End-to-end dog feeding solution for Raspberry Pi 3B+. Burns a signed Pi OS image, configures GPIO motor/servo control, and uploads events + generated datasets to HuggingFace.
 
 ### Components
 1. **Pi Burner Script** (`pi_burner.sh`)
-   - Downloads latest Pi OS
-   - Signs dataset with SHA256
-   - Burns SD card with dual write
-   - Configures for dog feeding
-   - Adds erase + verify scripts
+   - Downloads latest Pi OS Lite 64-bit
+   - Signs dataset config with SHA256
+   - Dual-burn SD card for reliability
+   - Writes config.txt (WiFi/BT disabled, Ethernet only)
+   - Adds verify_dataset.sh + erase_sd.sh + SETUP.txt
 
 2. **Dog Feeding Pipeline** (`src/ultrawhale/dog_feeding.py`)
-   - Scheduled feeding
-   - GPIO motor/servo control
-   - Dataset integrity verification
-   - HuggingFace event upload
-
-### Usage
-```bash
-# E2E: clone → burn SD card
-task start
-# Or step by step:
-task pi:check     # Check dependencies
-task pi:burn      # Download, sign, burn SD card
-```
-
-Insert SD card → `task start` → insert into Pi 3B+ → power on.
+   - Auto-detects Pi vs generic mode
+   - GPIO motor+servo feeding on schedule (Pi) or mock (generic)
+   - Real Q&A generation via HF Inference API or OpenRouter fallback
+   - Background upload thread for telemetry + datasets
+   - Dataset signature verification on boot
 
 ### Security
-- Dataset signed with SHA256
-- Integrity verified on boot
+- Dataset signed with SHA256, verified on every boot
 - No SSH, no user accounts
-- Secure erase script included (`/boot/erase_sd.sh` on Pi)
-- Ethernet-only (WiFi/BT disabled in config.txt)
+- Secure erase script (`/boot/erase_sd.sh`)
+- Ethernet-only (WiFi/BT disabled via dtoverlay)
+- Config tampering → feed pipeline halts
