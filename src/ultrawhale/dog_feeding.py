@@ -249,32 +249,28 @@ class DogFeedingPipeline:
         ]
 
     def run_scheduler(self):
-        """Main loop. Pi: feed on schedule. Non-Pi: generate dataset + upload."""
-        if IS_PI:
-            self.logger.info("Pi mode — feeding loop")
-            while True:
-                try:
-                    self.logger.info(f"Next feed in {self.schedule_interval}s")
-                    time.sleep(self.schedule_interval)
+        """Main loop. On Pi: feed + generate datasets. Off Pi: generate datasets."""
+        self.logger.info(f"Mode: {'Pi (feed + dataset gen)' if IS_PI else 'generic (dataset gen only)'}")
+
+        while True:
+            try:
+                # ── Feed (Pi only) ──
+                if IS_PI:
                     self.feed_dog()
-                except KeyboardInterrupt:
-                    break
-                except Exception as e:
-                    self.logger.error(f"Loop error: {e}")
-                    time.sleep(60)
-        else:
-            self.logger.info("Generic mode — continuous dataset download/generate + upload")
-            while True:
-                try:
-                    data = self._generate_dataset_batch()
-                    self.save_dataset(data)
-                    self.logger.info(f"Next batch in {self.schedule_interval}s")
-                    time.sleep(self.schedule_interval)
-                except KeyboardInterrupt:
-                    break
-                except Exception as e:
-                    self.logger.error(f"Loop error: {e}")
-                    time.sleep(60)
+
+                # ── Generate dataset batch (both Pi and generic) ──
+                data = self._generate_dataset_batch()
+                if data:
+                    self.save_dataset(data, "north")
+
+                self.logger.info(f"Next cycle in {self.schedule_interval}s")
+                time.sleep(self.schedule_interval)
+
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                self.logger.error(f"Loop error: {e}")
+                time.sleep(60)
 
     def cleanup(self):
         if IS_PI:
