@@ -26,7 +26,7 @@ class HFInferenceClient:
         "ralph": "RalphLabsAI/Ralph-1",
     }
 
-    HF_API_URL: str = "https://api-inference.huggingface.co/models/{model_id}/v1/chat/completions"
+    HF_API_URL: str = "https://router.huggingface.co/v1/chat/completions"
 
     def __init__(self, api_token: str | None = None) -> None:
         """Initialize the HF Inference client.
@@ -72,7 +72,7 @@ class HFInferenceClient:
             The assistant message content, or ``None`` on failure.
         """
         model_id: str = self.MODELS.get(model_key, self.MODELS["llama8b"])
-        url: str = self.HF_API_URL.format(model_id=model_id)
+        url: str = self.HF_API_URL
 
         try:
             import requests as req
@@ -88,6 +88,7 @@ class HFInferenceClient:
                     "Content-Type": "application/json",
                 },
                 json={
+                    "model": model_id,
                     "messages": messages,
                     "max_tokens": max_tokens,
                     "temperature": 0.7,

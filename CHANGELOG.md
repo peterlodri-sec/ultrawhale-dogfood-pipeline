@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-07-09
+
+### Added
+- **Pi Dog Feeding Burner** — `pi_burner.sh` downloads Pi OS Lite 64-bit, signs dataset, dual-burns SD card, writes headless config (WiFi/BT disabled, Ethernet only, GPIO motor/servo).
+- **Dog Feeding Pipeline** (`dog_feeding.py`) — auto-detects Pi vs generic mode, GPIO motor+servo on schedule (Pi) or mock (generic), real Q&A gen via HF Inference + OpenRouter fallback, background upload thread for telemetry + datasets.
+- **Dogfeed quality phases 1–4** — quality scoring, HF Inference hybrid backend, parallel ralph orchestrator, difficulty-aware active learning sampling.
+- **HF dataset upload** — 383 dogfeed JSONL files across Jun 22–29 now live on `PeetPedro/ultrawhale-dogfood`.
+
+### Fixed
+- macOS SD card detection: filter disk images via `diskutil info`; SD reader no longer treated as internal disk.
+- `dd` write: unmount disk, use `/dev/rdisk` for raw write, filter disk images from target list.
+- Disk image detection grep: `Virtual: No` was false positive on macOS; switched to correct field.
+- `second_burn`: unmount disk again before pass 2 (macOS auto-remounts after first write).
+- mypy: rename `response` vars to avoid type clash between HF and OpenRouter return types.
+- CI: inline workflow (shared workflow had `startup_failure` on first run).
+
+### Changed
+- Pi burner integrated into main README theme sections with E2E safety NOTICE.
+
 ## [2.0.0] - 2026-06-29
 
 ### Added

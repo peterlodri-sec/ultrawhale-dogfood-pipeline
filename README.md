@@ -33,9 +33,9 @@ Generates high-quality, LLM-judge-validated Q&A pairs at scale — up to 7,200+ 
 
 ## Live Stats — `PeetPedro/ultrawhale-dogfood`
 
-![files](https://img.shields.io/badge/files-291-blue)
-![range](https://img.shields.io/badge/range-Jun%2023%E2%80%9324%202026-lightgrey)
-![pairs](https://img.shields.io/badge/pairs-%7E2.9K-brightgreen)
+![files](https://img.shields.io/badge/files-383-blue)
+![range](https://img.shields.io/badge/range-Jun%2022%E2%80%9329%202026-lightgrey)
+![pairs](https://img.shields.io/badge/pairs-%7E4K-brightgreen)
 &nbsp; [![view](https://img.shields.io/badge/view_on_HF-yellow?logo=huggingface)](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood)
 
 #### random samples
