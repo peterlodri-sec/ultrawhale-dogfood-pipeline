@@ -189,6 +189,87 @@ TOPICS_PHILOSOPHY = [
     "aesthetics and philosophy of art",
 ]
 
+# Socrates — the man, the method, the dialogues.
+TOPICS_SOCRATES = [
+    "the Socratic method (elenchus)",
+    "Socratic irony",
+    "Socratic ignorance: 'I know that I know nothing'",
+    "the examined life",
+    "the Apology and the trial of Socrates",
+    "the Crito and obligation to the law",
+    "the Euthyphro and the Euthyphro dilemma",
+    "the Phaedo: the soul and death",
+    "the Meno: virtue and recollection",
+    "the Gorgias: rhetoric versus philosophy",
+    "the Protagoras: is virtue teachable?",
+    "the Symposium: love and eros",
+    "Socratic intellectualism: virtue is knowledge",
+    "the Socratic paradoxes",
+    "Socrates and the Sophists",
+    "the daimonion: Socrates' inner voice",
+    "Xenophon's portrait of Socrates",
+    "care of the soul",
+    "Socratic dialectic and definition",
+    "no one does wrong willingly",
+]
+
+# Modern philosophy — schools and figures from ~1800 onward.
+TOPICS_MODERN_PHILOSOPHY = [
+    "Hegel and German idealism",
+    "Schopenhauer and philosophical pessimism",
+    "Marxism and historical materialism",
+    "Kierkegaard and early existentialism",
+    "Nietzsche and the critique of morality",
+    "utilitarianism: Bentham and John Stuart Mill",
+    "American pragmatism: Peirce, James, Dewey",
+    "Husserl and phenomenology",
+    "Heidegger and the question of Being",
+    "Sartre and existentialism",
+    "Simone de Beauvoir and feminist philosophy",
+    "logical positivism and the Vienna Circle",
+    "Wittgenstein: early and late",
+    "Frege, Russell and analytic philosophy of language",
+    "Karl Popper and falsifiability",
+    "Thomas Kuhn and scientific paradigms",
+    "the Frankfurt School and critical theory",
+    "structuralism and post-structuralism: Foucault, Derrida",
+    "John Rawls and political liberalism",
+    "the philosophy of mind and the hard problem of consciousness",
+    "Quine and naturalized epistemology",
+    "Gadamer and hermeneutics",
+    "Whitehead and process philosophy",
+    "contemporary virtue ethics: MacIntyre",
+]
+
+# Space exploration & astronomy — observational and mission-focused,
+# distinct from the theoretical TOPICS_PHYSICS category.
+TOPICS_SPACE = [
+    "the solar system and its planets",
+    "the Moon and lunar exploration",
+    "Mars exploration and rovers",
+    "the Sun and solar activity",
+    "stars and stellar evolution",
+    "galaxies and the Milky Way",
+    "observing black holes",
+    "exoplanets and the search for life",
+    "telescopes: optical, radio, and space",
+    "the Hubble and James Webb space telescopes",
+    "rockets and propulsion",
+    "the history of spaceflight: Apollo and beyond",
+    "the International Space Station",
+    "satellites and orbital mechanics",
+    "comets, asteroids, and meteors",
+    "the structure and origin of the universe",
+    "observational evidence for dark matter and dark energy",
+    "space agencies and missions: NASA, ESA, others",
+    "astrobiology",
+    "the night sky and constellations",
+    "space weather",
+    "private spaceflight",
+    "human spaceflight and life in space",
+    "the future of space colonization",
+]
+
 TOPIC_CATEGORIES = {
     "all": TOPICS_ALL,
     "cs": TOPICS_CS_THEORY,
@@ -197,6 +278,9 @@ TOPIC_CATEGORIES = {
     "diverse": TOPICS_DIVERSE,
     "diverse2": TOPICS_DIVERSE2,
     "philosophy": TOPICS_PHILOSOPHY,
+    "socrates": TOPICS_SOCRATES,
+    "modphil": TOPICS_MODERN_PHILOSOPHY,
+    "space": TOPICS_SPACE,
 }
 
 QUESTION_PROMPTS = {
