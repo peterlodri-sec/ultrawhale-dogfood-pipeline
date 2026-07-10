@@ -121,6 +121,7 @@ def main() -> None:
             "modphil",
             "space",
             "history",
+            "religion",
         ],
     )
     gen_parser.add_argument("--hybrid", action="store_true", help="Use HF Inference as fallback")

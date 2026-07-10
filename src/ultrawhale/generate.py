@@ -298,6 +298,34 @@ TOPICS_HISTORY = [
     "the fall of the Soviet Union",
 ]
 
+# World religions & mythology — comparative faith traditions and myth cycles.
+TOPICS_RELIGION = [
+    "comparative religion",
+    "Hinduism",
+    "Buddhism",
+    "Judaism",
+    "Christianity",
+    "Islam",
+    "Sikhism",
+    "Taoism and Confucian tradition",
+    "Shinto",
+    "ancient Greek mythology",
+    "Norse mythology",
+    "Egyptian mythology",
+    "Mesopotamian mythology",
+    "Hindu mythology",
+    "indigenous and animist traditions",
+    "religious rituals and practices",
+    "sacred texts and scripture",
+    "monotheism and polytheism",
+    "mysticism and esotericism",
+    "afterlife beliefs across religions",
+    "creation myths",
+    "pilgrimage and sacred sites",
+    "religious ethics",
+    "secularism and atheism",
+]
+
 TOPIC_CATEGORIES = {
     "all": TOPICS_ALL,
     "cs": TOPICS_CS_THEORY,
@@ -310,6 +338,7 @@ TOPIC_CATEGORIES = {
     "modphil": TOPICS_MODERN_PHILOSOPHY,
     "space": TOPICS_SPACE,
     "history": TOPICS_HISTORY,
+    "religion": TOPICS_RELIGION,
 }
 
 QUESTION_PROMPTS = {
