@@ -270,6 +270,34 @@ TOPICS_SPACE = [
     "the future of space colonization",
 ]
 
+# World history — civilizations and turning points across eras.
+TOPICS_HISTORY = [
+    "ancient Mesopotamia and Sumer",
+    "ancient Egypt",
+    "ancient Greece",
+    "the Roman Republic and Empire",
+    "the Chinese dynasties",
+    "ancient India",
+    "the Byzantine Empire",
+    "the Islamic Golden Age",
+    "medieval Europe and feudalism",
+    "the Mongol Empire",
+    "the Renaissance",
+    "the Age of Exploration",
+    "the Protestant Reformation",
+    "the Scientific Revolution",
+    "the Enlightenment",
+    "the American Revolution",
+    "the French Revolution",
+    "the Industrial Revolution",
+    "colonialism and imperialism",
+    "World War I",
+    "World War II",
+    "the Cold War",
+    "decolonization movements",
+    "the fall of the Soviet Union",
+]
+
 TOPIC_CATEGORIES = {
     "all": TOPICS_ALL,
     "cs": TOPICS_CS_THEORY,
@@ -281,6 +309,7 @@ TOPIC_CATEGORIES = {
     "socrates": TOPICS_SOCRATES,
     "modphil": TOPICS_MODERN_PHILOSOPHY,
     "space": TOPICS_SPACE,
+    "history": TOPICS_HISTORY,
 }
 
 QUESTION_PROMPTS = {
