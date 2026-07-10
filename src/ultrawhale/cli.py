@@ -106,7 +106,9 @@ def main() -> None:
     gen_parser.add_argument("--num", type=int, default=100, help="Number of Q&A pairs")
     gen_parser.add_argument("--output", default="dogfeed.jsonl", help="Output JSONL file")
     gen_parser.add_argument("--host", default="http://localhost:8080", help="LLM server URL")
-    gen_parser.add_argument("--category", default="all", choices=["all", "cs", "physics", "hybrid", "diverse"])
+    gen_parser.add_argument(
+        "--category", default="all", choices=["all", "cs", "physics", "hybrid", "diverse", "diverse2", "philosophy"]
+    )
     gen_parser.add_argument("--hybrid", action="store_true", help="Use HF Inference as fallback")
     gen_parser.add_argument("--difficulty", action="store_true", help="Enable difficulty-aware sampling")
     gen_parser.add_argument("--hf-only", action="store_true", help="Skip local LLM, use HF only")

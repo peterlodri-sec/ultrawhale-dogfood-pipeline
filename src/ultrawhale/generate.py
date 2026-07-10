@@ -132,12 +132,71 @@ TOPICS_DIVERSE = [
     "nutrition and public health",
 ]
 
+# Mathematics + engineering + applied/professional domains — disjoint from
+# TOPICS_ALL (CS), TOPICS_PHYSICS, and TOPICS_DIVERSE (life/social/humanities).
+TOPICS_DIVERSE2 = [
+    "number theory",
+    "abstract algebra",
+    "topology",
+    "real analysis",
+    "probability and statistics",
+    "combinatorics",
+    "differential equations",
+    "mechanical engineering",
+    "electrical engineering",
+    "civil engineering",
+    "chemical engineering",
+    "aerospace engineering",
+    "materials science",
+    "business strategy and management",
+    "marketing",
+    "accounting",
+    "supply chain and logistics",
+    "culinary arts",
+    "agriculture and agronomy",
+    "sports science and kinesiology",
+    "film and cinematography",
+    "architecture and urban design",
+    "journalism and media",
+    "education and pedagogy",
+]
+
+# Philosophy — Plato-centric classical canon through modern schools.
+TOPICS_PHILOSOPHY = [
+    "Plato's theory of Forms",
+    "Platonic dialogues and the Socratic method",
+    "Plato's Republic and political philosophy",
+    "Aristotle's metaphysics and virtue ethics",
+    "Presocratic philosophy",
+    "Stoicism",
+    "Epicureanism",
+    "epistemology",
+    "metaphysics",
+    "ethics and moral philosophy",
+    "philosophy of mind",
+    "Kantian philosophy",
+    "Hegel and German idealism",
+    "Nietzsche and the will to power",
+    "existentialism",
+    "phenomenology",
+    "logic and philosophy of language",
+    "philosophy of science",
+    "Descartes and rationalism",
+    "British empiricism",
+    "Wittgenstein and analytic philosophy",
+    "Eastern philosophy: Confucianism, Daoism, Buddhism",
+    "medieval and scholastic philosophy",
+    "aesthetics and philosophy of art",
+]
+
 TOPIC_CATEGORIES = {
     "all": TOPICS_ALL,
     "cs": TOPICS_CS_THEORY,
     "physics": TOPICS_PHYSICS,
     "hybrid": TOPICS_ALL,
     "diverse": TOPICS_DIVERSE,
+    "diverse2": TOPICS_DIVERSE2,
+    "philosophy": TOPICS_PHILOSOPHY,
 }
 
 QUESTION_PROMPTS = {
