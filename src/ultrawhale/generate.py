@@ -103,19 +103,49 @@ TOPICS_PHYSICS = [
     "theoretical physics thesis",
 ]
 
+# Non-CS / non-physics domains — deliberately disjoint from TOPICS_ALL and
+# TOPICS_PHYSICS so this category broadens dataset coverage.
+TOPICS_DIVERSE = [
+    "molecular biology",
+    "genetics",
+    "neuroscience",
+    "human physiology and medicine",
+    "organic chemistry",
+    "biochemistry",
+    "ecology and evolution",
+    "geology and earth science",
+    "climate science",
+    "economics",
+    "finance and markets",
+    "world history",
+    "philosophy and ethics",
+    "psychology",
+    "cognitive science",
+    "linguistics",
+    "sociology",
+    "political science",
+    "law and jurisprudence",
+    "anthropology",
+    "literature and literary theory",
+    "art history",
+    "music theory",
+    "nutrition and public health",
+]
+
 TOPIC_CATEGORIES = {
     "all": TOPICS_ALL,
     "cs": TOPICS_CS_THEORY,
     "physics": TOPICS_PHYSICS,
     "hybrid": TOPICS_ALL,
+    "diverse": TOPICS_DIVERSE,
 }
 
 QUESTION_PROMPTS = {
     "conceptual": (
-        "Generate a clear, fundamental question about {topic} suitable for CS "
+        "Generate a clear, fundamental question about {topic} suitable for "
         "students learning the basics. Focus on core concepts."
     ),
-    "practical": "Generate a practical coding question related to {topic} with clear requirements and expected output.",
+    "practical": "Generate a practical, applied question related to {topic} with clear requirements and expected output.",
     "theoretical": "Generate a theoretical question about {topic} for advanced study or research.",
     "comparison": "Generate a comparison question contrasting two related concepts or approaches in {topic}.",
     "definition": "Generate a question asking to define and explain a fundamental concept in {topic}.",
