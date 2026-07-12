@@ -9,7 +9,7 @@
 [![Python](https://img.shields.io/badge/python-3.12+-00d4ff.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-00e660.svg)](LICENSE)
 [![HF Dataset](https://img.shields.io/badge/%20dataset-PeetPedro/ultrawhale--dogfood-ffb020)](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood)
-[![Q&A Pairs](https://img.shields.io/badge/Q%26A%20pairs-%7E4K-brightgreen)](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood)
+[![Q&A Pairs](https://img.shields.io/badge/Q%26A%20pairs-%7E24K-brightgreen)](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood)
 
 `qa-synthesis` `llm-judge` `pi-feeder` `ultrawhale` `dogfeed` `self-host`
 
@@ -36,9 +36,9 @@ Generates high-quality, LLM-judge-validated Q&A pairs at scale — up to 7,200+ 
 
 ## Live Stats — `PeetPedro/ultrawhale-dogfood`
 
-![files](https://img.shields.io/badge/files-383-blue)
-![range](https://img.shields.io/badge/range-Jun%2022%E2%80%9329%202026-lightgrey)
-![pairs](https://img.shields.io/badge/pairs-%7E4K-brightgreen)
+![files](https://img.shields.io/badge/files-407-blue)
+![range](https://img.shields.io/badge/range-Jun%2022%E2%80%93Jul%2012%202026-lightgrey)
+![pairs](https://img.shields.io/badge/pairs-%7E24K-brightgreen)
 &nbsp; [![view](https://img.shields.io/badge/view_on_HF-yellow?logo=huggingface)](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood)
 
 #### random samples

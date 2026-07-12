@@ -8,7 +8,7 @@ Upload local dogfeed JSONL files to HuggingFace — non-destructive, read-only.
 Rules:
   - Never deletes or moves local files
   - Skips the most recently modified file (likely still being written)
-  - Skips files already present on HF (checks by filename)
+  - Re-uploads files that have grown since last upload (compares sizes)
   - Skips empty files
   - Uploads one at a time with progress
 
@@ -81,26 +81,47 @@ def main() -> None:
         print("nothing to upload.")
         return
 
-    # ── fetch existing HF filenames ─────────────────────────────────────────
+    # ── fetch existing HF file sizes ────────────────────────────────────────
     print("\nchecking HF for already-uploaded files…")
     api = HfApi()
     try:
-        hf_files = set(
-            api.list_repo_files(HF_REPO, repo_type="dataset", token=HF_TOKEN)
+        hf_tree = api.list_repo_tree(
+            HF_REPO, repo_type="dataset", token=HF_TOKEN, recursive=True
         )
+        hf_sizes: dict[str, int] = {}
+        for item in hf_tree:
+            if hasattr(item, "size"):
+                hf_sizes[item.path] = item.size
     except Exception as e:
         print(f"could not list HF files: {e}", file=sys.stderr)
         sys.exit(1)
 
-    to_upload = [f for f in eligible if f.name not in hf_files]
-    already   = [f for f in eligible if f.name in hf_files]
+    to_upload = []
+    already = []
+    for f in eligible:
+        if f.name in hf_sizes:
+            local_size = f.stat().st_size
+            hf_size = hf_sizes[f.name]
+            if local_size > hf_size:
+                to_upload.append(f)  # local has grown — re-upload
+            else:
+                already.append(f)
+        else:
+            to_upload.append(f)  # new file
 
     if already:
-        print(f"already on HF: {len(already)} files — skipping")
-    print(f"to upload: {len(to_upload)} files")
+        print(f"already on HF (up to date): {len(already)} files — skipping")
+    if to_upload:
+        print(f"to upload: {len(to_upload)} files")
+        for f in to_upload:
+            if f.name in hf_sizes:
+                print(f"  {f.name}  (local {f.stat().st_size} > HF {hf_sizes[f.name]})")
+            else:
+                print(f"  {f.name}  (new)")
+    else:
+        print("all eligible files already on HF. done.")
 
     if not to_upload:
-        print("all eligible files already on HF. done.")
         return
 
     # ── upload ──────────────────────────────────────────────────────────────
