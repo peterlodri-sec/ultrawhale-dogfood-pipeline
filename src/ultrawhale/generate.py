@@ -346,7 +346,9 @@ QUESTION_PROMPTS = {
         "Generate a clear, fundamental question about {topic} suitable for "
         "students learning the basics. Focus on core concepts."
     ),
-    "practical": "Generate a practical, applied question related to {topic} with clear requirements and expected output.",
+    "practical": (
+        "Generate a practical, applied question related to {topic} with clear requirements and expected output."
+    ),
     "theoretical": "Generate a theoretical question about {topic} for advanced study or research.",
     "comparison": "Generate a comparison question contrasting two related concepts or approaches in {topic}.",
     "definition": "Generate a question asking to define and explain a fundamental concept in {topic}.",

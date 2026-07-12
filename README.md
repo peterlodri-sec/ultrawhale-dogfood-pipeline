@@ -9,6 +9,7 @@
 [![Python](https://img.shields.io/badge/python-3.12+-00d4ff.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-00e660.svg)](LICENSE)
 [![HF Dataset](https://img.shields.io/badge/%20dataset-PeetPedro/ultrawhale--dogfood-ffb020)](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood)
+[![Q&A Pairs](https://img.shields.io/badge/Q%26A%20pairs-%7E4K-brightgreen)](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood)
 
 `qa-synthesis` `llm-judge` `pi-feeder` `ultrawhale` `dogfeed` `self-host`
 
