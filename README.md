@@ -6,9 +6,11 @@
 </picture>
 
 [![CI](https://github.com/peterlodri-sec/ultrawhale-dogfood-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/peterlodri-sec/ultrawhale-dogfood-pipeline/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://python.org)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![HF Dataset](https://img.shields.io/badge/%20dataset-PeetPedro/ultrawhale--dogfood-yellow)](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood)
+[![Python](https://img.shields.io/badge/python-3.12+-00d4ff.svg)](https://python.org)
+[![License](https://img.shields.io/badge/license-MIT-00e660.svg)](LICENSE)
+[![HF Dataset](https://img.shields.io/badge/%20dataset-PeetPedro/ultrawhale--dogfood-ffb020)](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood)
+
+`qa-synthesis` `llm-judge` `pi-feeder` `ultrawhale` `dogfeed` `self-host`
 
 **Industrial-grade Q&A data synthesis pipeline for training LLMs — now with Pi-powered dog feeding.**
 
