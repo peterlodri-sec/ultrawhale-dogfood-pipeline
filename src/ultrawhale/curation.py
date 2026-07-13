@@ -54,7 +54,7 @@ class CurationEngine:
             f"Rate this Q&A pair for accuracy and quality (1-5). Output only the number.\nQ: {question}\nA: {answer}"
         )
         logger.debug("Judging Q&A pair (question length=%d)", len(question))
-        score_str: str | None = self.client._chat([{"role": "user", "content": prompt}], "llama70b", max_tokens=10)
+        score_str: str | None = self.client.chat([{"role": "user", "content": prompt}], "llama8b", max_tokens=10)
         try:
             score = float(score_str.strip()) if score_str else 3.0
         except (ValueError, AttributeError):

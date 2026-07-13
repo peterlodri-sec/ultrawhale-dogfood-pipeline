@@ -1,21 +1,19 @@
 # SPDX-License-Identifier: MIT
-"""Bulletproof HuggingFace Inference API client with retries, rate-limit handling, and circuit breaker.
+"""Bulletproof OpenRouter inference client with retries, rate-limit handling, and circuit breaker.
 
-Backward-compatible — all existing ``HFInferenceClient`` public methods preserved.
+Uses the OpenAI-compatible SDK (OpenRouter's native API pattern).
 """
 
 from __future__ import annotations
 
+import os
 import random
 import time
 from dataclasses import dataclass
 
-import requests
-
-from ultrawhale.config import Config
 from ultrawhale.logging import get_logger
 
-logger = get_logger("hf")
+logger = get_logger("openrouter")
 
 # ---------------------------------------------------------------------------
 # Retry / backoff configuration
@@ -24,11 +22,10 @@ logger = get_logger("hf")
 _MAX_RETRIES = 3
 _BACKOFF_BASE = 1.0
 _BACKOFF_MAX = 16.0
-_REQUEST_TIMEOUT = 30
+_REQUEST_TIMEOUT = 60
 _CIRCUIT_BREAKER_THRESHOLD = 5
 _CIRCUIT_BREAKER_COOLDOWN = 60
 
-# HTTP status codes that trigger a retry
 _RETRYABLE_STATUSES: frozenset[int] = frozenset({429, 502, 503, 504})
 
 
@@ -74,14 +71,14 @@ class _CircuitBreaker:
 # ---------------------------------------------------------------------------
 
 MODELS: dict[str, str] = {
-    "llama8b": "meta-llama/Meta-Llama-3-8B-Instruct",
-    "mixtral": "mistralai/Mistral-7B-Instruct-v0.3",
-    "hermes": "HuggingFaceH4/zephyr-7b-beta",
-    "kompress": "PeetPedro/kompress-v8",
-    "ralph": "RalphLabsAI/Ralph-1",
+    "free": "google/gemma-3-27b-it:free",
+    "deepseek": "deepseek/deepseek-r1:free",
+    "mistral": "mistralai/mistral-nemo:free",
+    "llama": "meta-llama/llama-4-maverick:free",
+    "qwen": "qwen/qwen2.5-vl-72b-instruct:free",
 }
 
-HF_API_URL: str = "https://router.huggingface.co/v1/chat/completions"
+OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
 
 
 # ---------------------------------------------------------------------------
@@ -89,50 +86,63 @@ HF_API_URL: str = "https://router.huggingface.co/v1/chat/completions"
 # ---------------------------------------------------------------------------
 
 
-class HFInferenceClient:
-    """Robust HuggingFace Inference API wrapper.
+class OpenRouterClient:
+    """Robust OpenRouter inference client via OpenAI-compatible endpoint.
 
     Features:
     - Exponential backoff with jitter on retryable errors (429, 502, 503, 504)
     - Circuit breaker — pauses all calls after N consecutive failures
-    - Per-model rate-limiter awareness
+    - Free-tier model awareness (track rate limits per model)
     - Structured logging at every step
-    - Backward-compatible public API
+    - API key loaded from ``OPENROUTER_API_KEY`` env var
     """
 
-    def __init__(self, api_token: str | None = None, max_retries: int = _MAX_RETRIES) -> None:
-        if api_token:
-            self.token = api_token
-        else:
-            cfg = Config()
-            if not cfg.hf_token:
-                raise ValueError("HF_TOKEN not set — set env var or pass api_token explicitly")
-            self.token = cfg.hf_token
+    def __init__(self, api_key: str | None = None, max_retries: int = _MAX_RETRIES) -> None:
+        key = api_key or os.getenv("OPENROUTER_API_KEY")
+        if not key:
+            raise ValueError("OPENROUTER_API_KEY not set — set env var or pass api_key explicitly")
 
+        self.api_key: str = key
         self.max_retries: int = max_retries
         self._breaker: _CircuitBreaker = _CircuitBreaker()
-        logger.info("HFInferenceClient ready (token=%s)", Config().mask_token())
+
+        # Lazy-import openai so the module is importable without it installed
+        self._client: object | None = None
+        logger.info("OpenRouterClient ready")
+
+    def _get_client(self):
+        """Lazy-initialise the OpenAI client (imports openai on first use)."""
+        if self._client is not None:
+            return self._client
+        import openai
+
+        self._client = openai.OpenAI(
+            base_url=OPENROUTER_BASE_URL,
+            api_key=self.api_key,
+            timeout=_REQUEST_TIMEOUT,
+        )
+        return self._client
 
     # ------------------------------------------------------------------
-    # Core HTTP
+    # Core request
     # ------------------------------------------------------------------
 
     def _request(
         self,
         messages: list[dict[str, str]],
-        model_key: str = "llama8b",
+        model_key: str = "free",
         max_tokens: int = 200,
         temperature: float = 0.7,
     ) -> str:
-        """Send a chat-completion request with full retry logic.
+        """Send a chat completion with full retry logic.
 
         Raises:
-            HFInferenceError: After exhausting all retries.
+            OpenRouterError: After exhausting all retries.
         """
-        model_id = MODELS.get(model_key, MODELS["llama8b"])
+        model_id = MODELS.get(model_key, MODELS["free"])
 
         if self._breaker.is_open():
-            raise HFInferenceError(
+            raise OpenRouterError(
                 f"Circuit breaker open — {self._breaker.failure_count} "
                 f"consecutive failures, retry in ~{_CIRCUIT_BREAKER_COOLDOWN}s"
             )
@@ -141,100 +151,71 @@ class HFInferenceClient:
 
         for attempt in range(self.max_retries + 1):
             try:
-                resp = requests.post(
-                    HF_API_URL,
-                    headers={
-                        "Authorization": f"Bearer {self.token}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "model": model_id,
-                        "messages": messages,
-                        "max_tokens": max_tokens,
-                        "temperature": temperature,
-                    },
-                    timeout=_REQUEST_TIMEOUT,
+                client = self._get_client()
+                response = client.chat.completions.create(
+                    model=model_id,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
                 )
 
-                if resp.status_code in _RETRYABLE_STATUSES:
-                    resp_msg = resp.json() if resp.text else "no body"
-                    raise _RetryableError(resp.status_code, resp_msg)
-
-                resp.raise_for_status()
-
-                content = str(resp.json()["choices"][0]["message"]["content"].strip())
+                content = response.choices[0].message.content or ""
+                content = content.strip()
                 self._breaker.record_success()
-                logger.debug("HF chat OK (model=%s, attempt=%d, tokens=%d)", model_key, attempt + 1, max_tokens)
+                logger.debug("OpenRouter chat OK (model=%s, attempt=%d, tokens=%d)", model_key, attempt + 1, max_tokens)
                 return content
 
-            except _RetryableError as exc:
-                last_exc = exc
-                logger.warning(
-                    "HF retryable error (model=%s, status=%d, attempt=%d/%d)",
-                    model_key,
-                    exc.status,
-                    attempt + 1,
-                    self.max_retries + 1,
-                )
-                self._breaker.record_failure()
-                if attempt < self.max_retries:
-                    delay = _exponential_backoff(attempt)
-                    logger.debug("HF backoff %.1fs", delay)
-                    time.sleep(delay)
+            except Exception as exc:
+                exc_str = str(exc).lower()
+                status = _extract_status(exc)
 
-            except requests.exceptions.Timeout:
-                last_exc = TimeoutError("HF request timed out")
-                logger.warning("HF timeout (model=%s, attempt=%d)", model_key, attempt + 1)
-                self._breaker.record_failure()
-                if attempt < self.max_retries:
-                    time.sleep(_exponential_backoff(attempt))
+                if status in _RETRYABLE_STATUSES or _is_rate_limited(exc_str):
+                    last_exc = exc
+                    logger.warning(
+                        "OpenRouter retryable (model=%s, status=%s, attempt=%d/%d)",
+                        model_key,
+                        status or "?",
+                        attempt + 1,
+                        self.max_retries + 1,
+                    )
+                    self._breaker.record_failure()
+                    if attempt < self.max_retries:
+                        delay = _exponential_backoff(attempt)
+                        logger.debug("OpenRouter backoff %.1fs", delay)
+                        time.sleep(delay)
+                    continue
 
-            except requests.exceptions.ConnectionError as exc:
-                last_exc = exc
-                logger.warning("HF connection error (model=%s, attempt=%d): %s", model_key, attempt + 1, exc)
-                self._breaker.record_failure()
-                if attempt < self.max_retries:
-                    time.sleep(_exponential_backoff(attempt))
-
-            except requests.exceptions.HTTPError as exc:
-                status = exc.response.status_code if exc.response is not None else -1
-                if status in _RETRYABLE_STATUSES:
-                    last_exc = _RetryableError(status, str(exc))
+                if _is_timeout(exc_str):
+                    last_exc = exc
+                    logger.warning("OpenRouter timeout (model=%s, attempt=%d)", model_key, attempt + 1)
                     self._breaker.record_failure()
                     if attempt < self.max_retries:
                         time.sleep(_exponential_backoff(attempt))
                     continue
-                last_exc = HFInferenceError(f"HTTP {status}: {exc}", status_code=status)
-                logger.error("HF HTTP error (status=%d): %s", status, exc)
-                raise last_exc from exc
 
-            except (KeyError, IndexError, TypeError) as exc:
-                last_exc = HFInferenceError(f"Malformed response from HF API: {exc}")
-                logger.error("HF response parse error: %s", exc)
-                self._breaker.record_failure()
-                if attempt < self.max_retries:
-                    time.sleep(_exponential_backoff(attempt))
+                if _is_auth_error(exc_str):
+                    raise OpenRouterError(f"OpenRouter auth failure — check OPENROUTER_API_KEY: {exc}") from exc
 
-            except Exception as exc:
+                # Unknown error — log and retry if attempts remain
                 last_exc = exc
-                logger.error("HF unexpected error (attempt=%d): %s", attempt + 1, exc)
+                logger.error("OpenRouter unexpected error (attempt=%d): %s", attempt + 1, exc)
                 self._breaker.record_failure()
                 if attempt < self.max_retries:
                     time.sleep(_exponential_backoff(attempt))
 
-        raise HFInferenceError(f"HF Inference failed after {self.max_retries + 1} attempts: {last_exc}")
+        raise OpenRouterError(f"OpenRouter failed after {self.max_retries + 1} attempts: {last_exc}")
 
     # ------------------------------------------------------------------
-    # Public API (backward-compatible)
+    # Public API
     # ------------------------------------------------------------------
 
     def generate_question(
         self,
         topic: str,
         question_type: str = "conceptual",
-        model_key: str = "llama8b",
+        model_key: str = "free",
     ) -> str | None:
-        """Generate a question about *topic* via HF Inference API.
+        """Generate a question about *topic* via OpenRouter.
 
         Returns ``None`` on any failure (graceful degradation).
         """
@@ -247,41 +228,41 @@ class HFInferenceClient:
             "theoretical": f"Generate a theoretical question about {topic}. Only output the question itself.",
         }
         prompt = prompts.get(question_type, prompts["conceptual"])
-        logger.info("HF generate-question topic=%s type=%s model=%s", topic, question_type, model_key)
+        logger.info("OR generate-question topic=%s type=%s model=%s", topic, question_type, model_key)
         try:
             return self._request([{"role": "user", "content": prompt}], model_key, max_tokens=100)
-        except HFInferenceError as exc:
-            logger.warning("HF generate-question failed: %s", exc)
+        except OpenRouterError as exc:
+            logger.warning("OR generate-question failed: %s", exc)
             return None
 
     def answer_question(
         self,
         question: str,
-        model_key: str = "llama8b",
+        model_key: str = "free",
     ) -> str | None:
-        """Generate an answer for a given question via HF Inference API."""
-        logger.info("HF answer-question model=%s", model_key)
+        """Generate an answer via OpenRouter."""
+        logger.info("OR answer-question model=%s", model_key)
         try:
             return self._request(
                 [{"role": "user", "content": f"Answer concisely:\n{question}"}],
                 model_key,
                 max_tokens=400,
             )
-        except HFInferenceError as exc:
-            logger.warning("HF answer-question failed: %s", exc)
+        except OpenRouterError as exc:
+            logger.warning("OR answer-question failed: %s", exc)
             return None
 
     def generate_qa_pair(
         self,
         topic: str,
         question_type: str = "conceptual",
-        model_key: str = "llama8b",
+        model_key: str = "free",
     ) -> tuple[str, str] | None:
-        """Generate a full Q&A pair via HF Inference API.
+        """Generate a full Q&A pair via OpenRouter.
 
-        Returns ``(question, answer)`` or ``None`` if either step fails.
+        Returns ``(question, answer)`` or ``None``.
         """
-        logger.info("HF generate-qa topic=%s type=%s model=%s", topic, question_type, model_key)
+        logger.info("OR generate-qa topic=%s type=%s model=%s", topic, question_type, model_key)
         question = self.generate_question(topic, question_type, model_key)
         if not question:
             return None
@@ -293,15 +274,15 @@ class HFInferenceClient:
     def chat(
         self,
         messages: list[dict[str, str]],
-        model_key: str = "llama8b",
+        model_key: str = "free",
         max_tokens: int = 200,
         temperature: float = 0.7,
     ) -> str | None:
         """Generic chat completion. Returns ``None`` on failure."""
         try:
             return self._request(messages, model_key, max_tokens, temperature)
-        except HFInferenceError as exc:
-            logger.warning("HF chat failed: %s", exc)
+        except OpenRouterError as exc:
+            logger.warning("OR chat failed: %s", exc)
             return None
 
     @property
@@ -320,18 +301,39 @@ class HFInferenceClient:
 # ---------------------------------------------------------------------------
 
 
-class HFInferenceError(Exception):
-    """HF Inference API call failed irrecoverably."""
+class OpenRouterError(Exception):
+    """OpenRouter API call failed irrecoverably."""
 
     def __init__(self, message: str, status_code: int | None = None) -> None:
         super().__init__(message)
         self.status_code = status_code
 
 
-class _RetryableError(HFInferenceError):
-    """Transient error that should be retried."""
+# ---------------------------------------------------------------------------
+# Error classification helpers
+# ---------------------------------------------------------------------------
 
-    def __init__(self, status: int, detail: object) -> None:
-        super().__init__(f"Retryable HTTP {status}: {detail}", status_code=status)
-        self.status = status
-        self.detail = detail
+
+def _extract_status(exc: Exception) -> int | None:
+    """Extract HTTP status code from an OpenAI/OpenRouter exception."""
+    for attr in ("status_code", "status", "http_status"):
+        val = getattr(exc, attr, None)
+        if val is not None:
+            try:
+                return int(val)
+            except (TypeError, ValueError):
+                pass
+    return None
+
+
+def _is_rate_limited(exc_str: str) -> bool:
+    keywords = ("rate limit", "too many requests", "429", "quota")
+    return any(k in exc_str for k in keywords)
+
+
+def _is_timeout(exc_str: str) -> bool:
+    return "timeout" in exc_str or "timed out" in exc_str
+
+
+def _is_auth_error(exc_str: str) -> bool:
+    return "401" in exc_str or "403" in exc_str or "unauthorized" in exc_str or "invalid api key" in exc_str

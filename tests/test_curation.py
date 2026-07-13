@@ -10,7 +10,7 @@ class TestCurationEngine:
     def test_judge_pair_returns_float(self):
         """judge_pair should return a float between 1 and 5."""
         mock_client = MagicMock()
-        mock_client._chat.return_value = "4.5"
+        mock_client.chat.return_value = "4.5"
 
         with patch("ultrawhale.curation.HFInferenceClient", return_value=mock_client):
             engine = CurationEngine("fake-token")
@@ -23,9 +23,9 @@ class TestCurationEngine:
             assert 1.0 <= score <= 5.0
 
     def test_judge_pair_fallback_on_none(self):
-        """When _chat returns None, should default to 3.0."""
+        """When chat returns None, should default to 3.0."""
         mock_client = MagicMock()
-        mock_client._chat.return_value = None
+        mock_client.chat.return_value = None
 
         engine = CurationEngine("fake-token")
         engine.client = mock_client
@@ -33,9 +33,9 @@ class TestCurationEngine:
         assert score == 3.0
 
     def test_judge_pair_fallback_on_invalid(self):
-        """When _chat returns non-numeric, should default to 3.0."""
+        """When chat returns non-numeric, should default to 3.0."""
         mock_client = MagicMock()
-        mock_client._chat.return_value = "not a number"
+        mock_client.chat.return_value = "not a number"
 
         engine = CurationEngine("fake-token")
         engine.client = mock_client
@@ -51,7 +51,7 @@ class TestCurationEngine:
     def test_curate_rejects_low_score(self):
         """curate should return None when score < 4.0."""
         mock_client = MagicMock()
-        mock_client._chat.return_value = "3.5"
+        mock_client.chat.return_value = "3.5"
 
         engine = CurationEngine("fake-token")
         engine.client = mock_client
@@ -62,7 +62,7 @@ class TestCurationEngine:
     def test_curate_accepts_high_score(self):
         """curate should return pair with curated_score when score ≥ 4.0."""
         mock_client = MagicMock()
-        mock_client._chat.return_value = "4.7"
+        mock_client.chat.return_value = "4.7"
 
         engine = CurationEngine("fake-token")
         engine.client = mock_client
@@ -78,7 +78,7 @@ class TestCurationEngine:
     def test_curate_exact_threshold(self):
         """Score exactly 4.0 should pass."""
         mock_client = MagicMock()
-        mock_client._chat.return_value = "4.0"
+        mock_client.chat.return_value = "4.0"
 
         engine = CurationEngine("fake-token")
         engine.client = mock_client
