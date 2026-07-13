@@ -43,8 +43,8 @@ Generates high-quality, LLM-judge-validated Q&A pairs at scale — up to 7,200+ 
 
 #### random samples
 
-[chain-of-thought reasoning](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood/viewer/../resolve/main/dogfeed-loop-99-20260624-015219.jsonl)
-· [what is a dogfeed in ML?](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood/viewer/../resolve/main/dogfeed-loop-99-20260624-015219.jsonl)
+[chain-of-thought reasoning](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood/resolve/main/dogfeed-loop-99-20260624-015219.jsonl)
+· [what is a dogfeed in ML?](https://huggingface.co/datasets/PeetPedro/ultrawhale-dogfood/resolve/main/dogfeed-loop-99-20260624-015219.jsonl)
 
 ## Quickstart
 
@@ -52,16 +52,16 @@ Generates high-quality, LLM-judge-validated Q&A pairs at scale — up to 7,200+ 
 # Install (from source)
 git clone https://github.com/peterlodri-sec/ultrawhale-dogfood-pipeline.git
 cd ultrawhale-dogfood-pipeline
-pip install .
+uv sync --all-extras
 
 # Generate 100 Q&A pairs (requires a running llama.cpp server)
-ultrawhale generate --num 100 --category cs --host http://localhost:8080
+uv run ultrawhale generate --num 100 --category cs --host http://localhost:8080
 
 # Check pipeline health
-ultrawhale status
+uv run ultrawhale status
 
 # Upload results to HuggingFace (requires HF_TOKEN)
-ultrawhale upload
+uv run ultrawhale upload
 
 # --- Pi Dog Feeding ---
 # Burn SD card (insert card first)
@@ -76,7 +76,7 @@ task pi:burn      # Download Pi OS, sign dataset, burn SD card
 
 - **Parallel Generation** — Multi-worker architecture with dynamic autoscaling (2-8 workers)
 - **Quality Gating** — Every pair scored on coherence, length, and diversity; LLM-judge validated
-- **HF Inference Fallback** — Low-quality local outputs automatically fall back to HF-hosted Llama70B
+- **HF/OpenRouter Fallback** — Low-quality local outputs fall back to HF Inference API or OpenRouter free tier
 - **Difficulty Sampling** — Active learning distributes questions across easy/medium/hard tiers
 - **Structured Logging** — JSON or human-readable, with per-component tagging
 - **Async I/O** — Queue-based writer ensures generation is never blocked by disk I/O
@@ -84,6 +84,23 @@ task pi:burn      # Download Pi OS, sign dataset, burn SD card
 - **Kompress-v8** — Post-processing compression for compact dataset storage
 - **Pi Dog Feeding** — Burn Pi OS with signed dataset, GPIO motor/servo control, background HF upload on every cycle
 - **Dual-Mode** — Same code runs on Pi (GPIO feeding + dataset gen) or generic machine (dataset gen only)
+
+## Recommended Model
+
+The pipeline default is Qwen3.6-27B Q4_K_M, but for best throughput use a **MoE model**:
+
+| Model | Params | Active | Q4_K_M | Speed vs Qwen3.6 | Best for |
+|-------|--------|--------|--------|------------------|----------|
+| `unsloth/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M` | 30B | 3B | ~18GB | 3-9x faster | All topics |
+| `unsloth/Qwen3.6-27B-GGUF:Q4_K_M` (current) | 27B | 27B | ~16GB | 1x | All topics |
+| `Qwen2.5-Coder-32B-Instruct-GGUF:Q4_K_M` | 32B | 32B | ~20GB | 0.5x | Technical/CS |
+
+To switch models, update your env or `llm-server.sh`:
+```bash
+LLM_MODEL=qwen3-30b-a3b
+# In llm-server.sh:
+# -hf unsloth/Qwen3-30B-A3B-Instruct-GGUF:Q4_K_M
+```
 
 ## Architecture
 
@@ -129,8 +146,9 @@ All settings are configured via environment variables — no config files needed
 | `HF_TOKEN` | — | HuggingFace API token (required for upload + HF inference) |
 | `OPENROUTER_API_KEY` | — | OpenRouter key (free inference fallback if HF Inference API down) |
 | `LLM_HOST` | `http://localhost:8080` | LLM server URL |
-| `LLM_MODEL` | `qwen3.6-27b` | Model name served by the server |
+| `LLM_MODEL` | `qwen3.6-27b` | Model name (see [Recommended Model](#recommended-model)) |
 | `LLAMA_SERVER_BIN` | `/opt/homebrew/bin/llama-server` | llama.cpp binary path |
+| `OPENROUTER_API_KEY` | — | OpenRouter key for inference fallback |
 | `ULTRAWHALE_MAX_WORKERS` | `8` | Maximum parallel workers |
 | `ULTRAWHALE_MIN_WORKERS` | `2` | Minimum parallel workers |
 | `ULTRAWHALE_MIN_SCORE` | `0.65` | Minimum quality score threshold |
