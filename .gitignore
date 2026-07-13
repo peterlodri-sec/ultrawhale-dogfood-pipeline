@@ -10,4 +10,7 @@ dogfeed_*.jsonl
 dogfeed_parallel/
 hf_upload_staging/
 node_modules/
+audio/*.opus
+audio/*.mp3
 test_p*.jsonl
+audio-edge/

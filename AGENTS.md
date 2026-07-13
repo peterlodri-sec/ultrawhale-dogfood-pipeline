@@ -87,3 +87,8 @@ tests/                # pytest, markers: slow, integration, requires_hf_token
 - `ruff format --check` (CI) fails if files aren't formatted — run `ruff format` before pushing
 - `dogfeed_*.jsonl` and `dogfeed_parallel/` are gitignored — never commit
 - Coverage omits `__main__.py`, `if __name__ == "__main__"`, `raise NotImplementedError`, and `def __repr__`
+- **GPG signing**: `git commit` hangs if GPG agent not unlocked. Use `--no-gpg-sign` or `export GPG_TTY=$(tty)`
+
+## Related
+
+- **`audio-edge/`**: vaked-audio edge streaming engine (separate repo: [peterlodri-sec/vaked-audio-edge](https://github.com/peterlodri-sec/vaked-audio-edge)). Worker + CF Container for Opus streaming + YouTube import. Local CLI + macOS menu bar app at `audio-edge/cli.py`.
