@@ -183,6 +183,15 @@ HF_TOKEN=your_token python3 src/ultrawhale/dog_feeding.py
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details on setup, workflow, and PR process.
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for deep architecture details.
 
+## Related Projects
+
+### [vaked-audio-edge](https://github.com/peterlodri-sec/vaked-audio-edge)
+
+[![CI](https://github.com/peterlodri-sec/vaked-audio-edge/actions/workflows/ci.yml/badge.svg)](https://github.com/peterlodri-sec/vaked-audio-edge/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.12+-00d4ff.svg)](https://python.org)
+
+Cloudflare edge audio streaming + YouTube import — Python CLI + macOS menu bar app. Worker + CF Container for Opus streaming. Nested repo at `audio-edge/`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
