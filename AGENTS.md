@@ -91,4 +91,4 @@ tests/                # pytest, markers: slow, integration, requires_hf_token
 
 ## Related
 
-- **`audio-edge/`**: vaked-audio edge streaming engine (separate repo: [peterlodri-sec/vaked-audio-edge](https://github.com/peterlodri-sec/vaked-audio-edge)). Worker + CF Container for Opus streaming + YouTube import. Local CLI + macOS menu bar app at `audio-edge/cli.py`.
+- **`audio-edge/`**: vaked-audio edge streaming engine (separate repo: [peterlodri-sec/vaked-audio-edge](https://github.com/peterlodri-sec/vaked-audio-edge)). TypeScript Worker + CF Container for Opus streaming + YouTube import. Web-only — no CLI or local apps.

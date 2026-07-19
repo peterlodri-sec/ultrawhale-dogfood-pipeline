@@ -69,6 +69,7 @@ def cmd_status(args: argparse.Namespace) -> int:
         logger.info("Configuration valid.")
 
     logger.info(f"LLM server: {cfg.llm_host} (model: {cfg.llm_model})")
+    logger.info(f"LLM API key: {cfg.mask_llm_api_key()}")
     logger.info(f"HF token: {cfg.mask_token()}")
     logger.info(f"HF repo: {cfg.hf_repo}")
     logger.info(f"Log dir: {cfg.log_dir}")
@@ -80,13 +81,27 @@ def cmd_status(args: argparse.Namespace) -> int:
     try:
         import openai
 
-        client = openai.OpenAI(base_url=f"{cfg.llm_host}/v1", api_key="none")
+        client = openai.OpenAI(base_url=cfg.openai_base_url(), api_key=cfg.openai_api_key())
         models = client.models.list()
         logger.info(f"LLM server reachable — {len(models.data) if hasattr(models, 'data') else '?'} models")
     except Exception as e:
         logger.warning(f"LLM server not reachable: {e}")
 
     return 0
+
+
+def cmd_tailnet_status(args: argparse.Namespace) -> int:
+    """Serve status/logs on a Tailscale-only bind address."""
+    from ultrawhale.tailnet_status import main as tailnet_status_main
+
+    tailnet_args = []
+    if args.host:
+        tailnet_args.extend(["--host", args.host])
+    if args.port:
+        tailnet_args.extend(["--port", str(args.port)])
+    if args.lines:
+        tailnet_args.extend(["--lines", str(args.lines)])
+    return tailnet_status_main(tailnet_args)
 
 
 def main() -> None:
@@ -99,13 +114,16 @@ def main() -> None:
     parser.add_argument("--json-log", action="store_true", help="Emit JSON-structured logs")
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    from ultrawhale.config import Config
+
+    cfg_defaults = Config()
 
     # --- generate ---
     gen_parser = subparsers.add_parser("generate", help="Generate Q&A pairs")
-    gen_parser.add_argument("--model", default="qwen3.6-27b", help="Model name")
+    gen_parser.add_argument("--model", default=cfg_defaults.llm_model, help="Model name")
     gen_parser.add_argument("--num", type=int, default=100, help="Number of Q&A pairs")
     gen_parser.add_argument("--output", default="dogfeed.jsonl", help="Output JSONL file")
-    gen_parser.add_argument("--host", default="http://localhost:8080", help="LLM server URL")
+    gen_parser.add_argument("--host", default=cfg_defaults.llm_host, help="LLM server URL")
     gen_parser.add_argument(
         "--category",
         default="all",
@@ -148,6 +166,13 @@ def main() -> None:
     # --- status ---
     status_parser = subparsers.add_parser("status", help="Health check")
     status_parser.set_defaults(func=cmd_status)
+
+    # --- tailnet-status ---
+    tailnet_parser = subparsers.add_parser("tailnet-status", help="Serve status/logs on Tailscale only")
+    tailnet_parser.add_argument("--host", help="Tailnet bind address; defaults to tailscale ip -4")
+    tailnet_parser.add_argument("--port", type=int, default=None)
+    tailnet_parser.add_argument("--lines", type=int, default=None)
+    tailnet_parser.set_defaults(func=cmd_tailnet_status)
 
     args = parser.parse_args()
 

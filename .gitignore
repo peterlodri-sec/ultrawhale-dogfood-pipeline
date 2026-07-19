@@ -14,3 +14,4 @@ audio/*.opus
 audio/*.mp3
 test_p*.jsonl
 audio-edge/
+deploy/pi-openrouter.env

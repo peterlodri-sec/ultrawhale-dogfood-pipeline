@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Ultrawhale upload loop
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=15min
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

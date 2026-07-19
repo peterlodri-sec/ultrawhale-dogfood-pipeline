@@ -1,0 +1,16 @@
+[Unit]
+Description=Upload Ultrawhale dogfeed files to HuggingFace
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ultrawhale
+Group=ultrawhale
+WorkingDirectory=/opt/ultrawhale
+EnvironmentFile=/etc/ultrawhale/openrouter.env
+ExecCondition=/bin/sh -c '. /etc/ultrawhale/openrouter.env; test -n "$HF_TOKEN"'
+ExecStart=/usr/local/bin/uv run ultrawhale upload --dir /var/lib/ultrawhale --active-grace 5
+Nice=15
+NoNewPrivileges=true
+PrivateTmp=true

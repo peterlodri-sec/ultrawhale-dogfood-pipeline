@@ -1,0 +1,19 @@
+[Unit]
+Description=Ultrawhale tailnet-only status server
+Wants=tailscaled.service ultrawhale.service
+After=tailscaled.service ultrawhale.service
+
+[Service]
+Type=simple
+User=ultrawhale
+Group=ultrawhale
+WorkingDirectory=/opt/ultrawhale
+EnvironmentFile=/etc/ultrawhale/openrouter.env
+ExecStart=/usr/local/bin/uv run ultrawhale tailnet-status
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

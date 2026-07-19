@@ -67,6 +67,11 @@ class Config:
                 "HF_TOKEN not set — HF inference and upload will fail. Set via HF_TOKEN env var or .env file."
             )
 
+        if _is_openrouter_host(self.llm_host) and not self.openai_api_key():
+            warnings.append(
+                "OPENROUTER_API_KEY not set — OpenRouter generation will fail. Set OPENROUTER_API_KEY or LLM_API_KEY."
+            )
+
         if self.min_quality_score < 0 or self.min_quality_score > 1:
             warnings.append(f"ULTRAWHALE_MIN_SCORE={self.min_quality_score} out of range [0,1] — using 0.65")
             self.min_quality_score = 0.65
@@ -84,6 +89,18 @@ class Config:
         if len(self.hf_token) <= 8:
             return "*" * len(self.hf_token)
         return self.hf_token[:4] + "…" + self.hf_token[-4:]
+
+    def openai_base_url(self, llm_host: str | None = None) -> str:
+        """Return the OpenAI-compatible base URL for an LLM host."""
+        return _normalize_openai_base_url(llm_host or self.llm_host)
+
+    def openai_api_key(self, llm_host: str | None = None) -> str:
+        """Return the API key for the OpenAI-compatible LLM endpoint."""
+        return _resolve_openai_api_key(llm_host or self.llm_host)
+
+    def mask_llm_api_key(self, llm_host: str | None = None) -> str:
+        """Return a masked API key for safe LLM endpoint logging."""
+        return _mask_secret(self.openai_api_key(llm_host))
 
 
 def _load_hf_token() -> str | None:
@@ -108,3 +125,37 @@ def _load_hf_token() -> str | None:
             pass
 
     return None
+
+
+def _normalize_openai_base_url(llm_host: str) -> str:
+    """Normalize an endpoint root to the OpenAI-compatible /v1 base URL."""
+    host = llm_host.rstrip("/")
+    if host.endswith("/v1"):
+        return host
+    return f"{host}/v1"
+
+
+def _resolve_openai_api_key(llm_host: str) -> str:
+    """Resolve the API key for local or remote OpenAI-compatible endpoints."""
+    explicit = os.getenv("LLM_API_KEY")
+    if explicit:
+        return explicit.strip()
+
+    if _is_openrouter_host(llm_host):
+        return os.getenv("OPENROUTER_API_KEY", "").strip()
+
+    return os.getenv("OPENAI_API_KEY", "none").strip() or "none"
+
+
+def _is_openrouter_host(llm_host: str) -> bool:
+    return "openrouter.ai" in llm_host.lower()
+
+
+def _mask_secret(secret: str | None) -> str:
+    if not secret:
+        return "<unset>"
+    if secret == "none":
+        return "none"
+    if len(secret) <= 8:
+        return "*" * len(secret)
+    return secret[:4] + "…" + secret[-4:]

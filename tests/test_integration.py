@@ -147,6 +147,20 @@ class TestGenerateMultiplePairs:
 
 
 class TestConfigIntegration:
+    def test_config_openrouter_uses_openrouter_key_and_normalizes_base_url(self, monkeypatch):
+        """OpenRouter deployments should use OPENROUTER_API_KEY and avoid /v1/v1 base URLs."""
+        from ultrawhale.config import Config
+
+        monkeypatch.setenv("LLM_HOST", "https://openrouter.ai/api/v1")
+        monkeypatch.setenv("LLM_MODEL", "openrouter/auto")
+        monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test-token")
+
+        cfg = Config()
+
+        assert cfg.llm_model == "openrouter/auto"
+        assert cfg.openai_base_url() == "https://openrouter.ai/api/v1"
+        assert cfg.openai_api_key() == "sk-or-test-token"
+
     def test_config_from_env(self, monkeypatch):
         """Config should load from environment variables."""
         from ultrawhale.config import Config
@@ -172,3 +186,61 @@ class TestConfigIntegration:
         assert cfg.max_workers == 8
         assert cfg.min_workers == 2
         assert cfg.min_quality_score == 0.65
+
+
+class TestOpenRouterGeneration:
+    def test_generate_dataset_uses_authenticated_openai_endpoint(self, monkeypatch, tmp_path: Path):
+        """Generation should pass authenticated OpenAI-compatible settings to OpenRouter."""
+        from ultrawhale import generate
+
+        reset_seen_hashes()
+        output_file = tmp_path / "openrouter_output.jsonl"
+        captured: list[dict[str, str]] = []
+
+        class _Models:
+            def list(self):
+                return type("ModelList", (), {"data": [type("Model", (), {"id": "openrouter/auto"})()]})()
+
+        class _Completions:
+            def __init__(self):
+                self.calls = 0
+
+            def create(self, **kwargs):
+                self.calls += 1
+                if self.calls % 2:
+                    content = "What tradeoffs matter when designing a resilient distributed cache?"
+                else:
+                    content = (
+                        "A resilient distributed cache balances consistency, replication, eviction policy, "
+                        "failure recovery, latency, and operational complexity across nodes."
+                    )
+                return type(
+                    "Response",
+                    (),
+                    {"choices": [type("Choice", (), {"message": type("Message", (), {"content": content})()})()]},
+                )()
+
+        class _Chat:
+            def __init__(self):
+                self.completions = _Completions()
+
+        class _OpenAI:
+            def __init__(self, base_url, api_key):
+                captured.append({"base_url": base_url, "api_key": api_key})
+                self.models = _Models()
+                self.chat = _Chat()
+
+        monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test-token")
+        monkeypatch.setattr(generate.openai, "OpenAI", _OpenAI)
+
+        generate.generate_dataset(
+            model="openrouter/auto",
+            num_pairs=1,
+            output_file=str(output_file),
+            llm_host="https://openrouter.ai/api/v1",
+            topic_category="cs",
+            skip_curation=True,
+        )
+
+        assert captured == [{"base_url": "https://openrouter.ai/api/v1", "api_key": "sk-or-test-token"}]
+        assert output_file.exists()

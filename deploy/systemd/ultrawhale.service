@@ -1,0 +1,22 @@
+[Unit]
+Description=Ultrawhale OpenRouter dogfeed generator
+Wants=network-online.target tailscaled.service
+After=network-online.target tailscaled.service
+
+[Service]
+Type=simple
+User=ultrawhale
+Group=ultrawhale
+WorkingDirectory=/opt/ultrawhale
+EnvironmentFile=/etc/ultrawhale/openrouter.env
+ExecStart=/usr/local/bin/uv run ultrawhale generate --model ${LLM_MODEL} --host ${LLM_HOST} --num ${ULTRAWHALE_NUM_PAIRS} --category ${ULTRAWHALE_CATEGORY} --output /var/lib/ultrawhale/dogfeed_pi.jsonl --skip-curation
+Restart=always
+RestartSec=15
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

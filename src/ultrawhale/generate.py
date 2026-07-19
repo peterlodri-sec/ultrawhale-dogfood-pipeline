@@ -612,7 +612,7 @@ def generate_dataset(
     # --- Local LLM client ---
     client = None
     if not hf_only:
-        client = openai.OpenAI(base_url=f"{llm_host}/v1", api_key="none")
+        client = openai.OpenAI(base_url=cfg.openai_base_url(llm_host), api_key=cfg.openai_api_key(llm_host))
 
     # --- Difficulty tracking ---
     al_tracker = None
