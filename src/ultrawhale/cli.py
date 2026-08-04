@@ -104,6 +104,31 @@ def cmd_tailnet_status(args: argparse.Namespace) -> int:
     return tailnet_status_main(tailnet_args)
 
 
+def cmd_babilon(args: argparse.Namespace) -> int:
+    """Generate Babilon quant dog→human translation training data."""
+    setup_logging(component="babilon")
+
+    import sys
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    sys.path.insert(0, str(repo_root))
+    from babilon_quant_dogfood import generate_babilon_dogfood, recursive_dogfood_loop
+
+    if args.single:
+        records = generate_babilon_dogfood(
+            num_cycles=args.pairs,
+            output_path=args.output,
+        )
+        print(f"Generated {len(records)} pairs → {args.output}")
+    else:
+        recursive_dogfood_loop(
+            rounds=args.rounds,
+            pairs_per_round=args.pairs,
+            upload=args.upload,
+            hf_repo=args.repo,
+        )
+    return 0
+
+
 def main() -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -117,6 +142,16 @@ def main() -> None:
     from ultrawhale.config import Config
 
     cfg_defaults = Config()
+
+    # --- babilon ---
+    bab_parser = subparsers.add_parser("babilon", help="Babilon quant dog-translation training data")
+    bab_parser.add_argument("--rounds", type=int, default=10, help="Recursive loops (default: 10)")
+    bab_parser.add_argument("--pairs", type=int, default=50, help="Pairs per round (default: 50)")
+    bab_parser.add_argument("--upload", action="store_true", help="Upload to HuggingFace")
+    bab_parser.add_argument("--repo", default="PeetPedro/ultrawhale-dogfood", help="HF repo")
+    bab_parser.add_argument("--output", default="dogfeed_parallel/babilon_seed.jsonl")
+    bab_parser.add_argument("--single", action="store_true", help="Single-shot (no loop)")
+    bab_parser.set_defaults(func=cmd_babilon)
 
     # --- generate ---
     gen_parser = subparsers.add_parser("generate", help="Generate Q&A pairs")
