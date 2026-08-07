@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ultrawhale"
-version = "2.0.2"
+version = "2.0.3"
 description = "High-throughput Q&A generation pipeline for training LLMs — industrial-grade data synthesis"
 readme = "README.md"
 license = {text = "MIT"}
