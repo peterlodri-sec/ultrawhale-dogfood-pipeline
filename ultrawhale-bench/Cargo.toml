@@ -1,0 +1,14 @@
+[package]
+name = "ultrawhale-bench"
+version = "0.1.0"
+edition = "2021"
+authors = ["Peter Lodri <peter@vaked.dev>"]
+description = "Ultrawhale Dogfood Fine-Tuning & BitNet b1.58 Inference Performance Benchmark Harness"
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1.38", features = ["full"] }
+reqwest = { version = "0.12", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = "0.4"
