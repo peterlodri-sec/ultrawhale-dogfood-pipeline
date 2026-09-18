@@ -130,6 +130,24 @@ def main() -> None:
         except Exception as e:  # noqa: BLE001
             print(f"  ! upload failed: {e}")
 
+        # cogito dimension: the summa breathes on the same cycle — the named
+        # shelves' heads ride to PeetPedro/cogito-ergo-summa as fresh rows
+        cog_rows = []
+        for name in ("the-dyad-mapping-essences.md", "the-small-testament.md",
+                     "the-base-emotionale.md", "william-leonard-pickard-read-with-care.md"):
+            p = SRC["vault"] / name
+            if p.exists():
+                head = next((l[2:] for l in p.read_text(encoding="utf-8").splitlines() if l.startswith("# ")), "")
+                cog_rows.append({"dim": "vault", "file": name, "head": head})
+        if cog_rows:
+            cop = [CommitOperationAdd(f"cogito/{ts}.jsonl",
+                      (json.dumps(cog_rows, ensure_ascii=False) + "\n").encode())]
+            try:
+                api.create_commit("PeetPedro/cogito-ergo-summa", operations=cop,
+                                  commit_message=f"multidog cogito {ts}", repo_type="dataset")
+            except Exception as e:  # noqa: BLE001
+                print(f"  ! cogito: {e}")
+
         if once:
             break
         time.sleep(FEED_SECS)
