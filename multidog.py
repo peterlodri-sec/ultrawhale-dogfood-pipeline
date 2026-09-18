@@ -1,10 +1,11 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = ["huggingface-hub>=0.23"]
-# Every heartbeat is a riva breath: the feed daemon breathes on the same
-# rhythm as riva.vaked.dev breathing cycle - in, out, row.
 # ///
 """multidog.py — multi-dimensional dogfeeding into PeetPedro/ultrawhale-dogfood.
+
+Every heartbeat is a riva breath: the feed daemon breathes on the same
+rhythm as riva.vaked.dev's breathing cycle - in, out, row.
 
 Each dimension rides as feeds/<dim>/<ts>-<seq>.jsonl and the run updates
 feeds/MANIFEST-multidog.json. State (row counts per source) lives in
