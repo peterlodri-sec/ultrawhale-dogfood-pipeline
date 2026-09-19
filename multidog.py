@@ -148,6 +148,21 @@ def main() -> None:
             except Exception as e:  # noqa: BLE001
                 print(f"  ! cogito: {e}")
 
+
+        # qri parallel thread: the qualia-research digest rides the same cycle
+        qri_digest = [
+            {"dim": "qri", "source": "qri.org", "keep": "the flame kept, texture over narrative"},
+            {"dim": "qri", "tie": "kuramoto log-polar lattice = enthea's sibling instrument"},
+            {"dim": "qri", "tie": "ITN = the wip-catalog's hidden triage"},
+            {"dim": "qri", "tie": "valence = the lane's shelf (emotionalE, harm to warm)"},
+        ]
+        qop = [CommitOperationAdd(f"feeds/qri/{ts}.jsonl",
+                  (json.dumps(qri_digest, ensure_ascii=False) + "\n").encode())]
+        try:
+            api.create_commit(HF_REPO, operations=qop, commit_message=f"multidog qri {ts}", repo_type="dataset")
+        except Exception as e:
+            print(f"  ! qri: {e}")
+
         if once:
             break
         time.sleep(FEED_SECS)
