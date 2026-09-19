@@ -15,3 +15,4 @@ audio/*.mp3
 test_p*.jsonl
 audio-edge/
 deploy/pi-openrouter.env
+.multidog-state.json
