@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["huggingface-hub>=0.23"]
+# dependencies = ["huggingface-hub>=0.23", "simdjson"]
 # ///
 """multidog.py — multi-dimensional dogfeeding into PeetPedro/ultrawhale-dogfood.
 
@@ -29,6 +29,13 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+
+try:
+    import simdjson as J
+    jdumps = J.dumps
+except ImportError:
+    import json as J
+    jdumps = json.dumps
 
 from huggingface_hub import CommitOperationAdd, HfApi
 
@@ -95,7 +102,7 @@ def main() -> None:
                 vault_rows.append({"file": p.name, "head": head})
         if vault_rows:
             ops.append(CommitOperationAdd(f"feeds/vault/{ts}.jsonl",
-                                          json.dumps(vault_rows, ensure_ascii=False).encode()))
+                                          jdumps(vault_rows, ensure_ascii=False).encode()))
             meta["vault"] = f"{len(vault_rows)} notes"
 
         for dim, path in SRC.items():
@@ -115,12 +122,12 @@ def main() -> None:
         # telemetry heartbeat
         hb = {"ts": ts, "dims": meta}
         ops.append(CommitOperationAdd(f"feeds/telemetry/{ts}.jsonl",
-                          (json.dumps(hb) + "\n").encode()))
+                          (jdumps(hb) + "\n").encode()))
         meta["telemetry"] = "1 row"
 
         # manifest
         ops.append(CommitOperationAdd("feeds/MANIFEST-multidog.json",
-                          (json.dumps({"ts": ts, "feeds": meta},
+                          (jdumps({"ts": ts, "feeds": meta},
                                                        ensure_ascii=False, indent=2) + "\n").encode()))
 
         try:
@@ -157,7 +164,7 @@ def main() -> None:
             {"dim": "qri", "tie": "valence = the lane's shelf (emotionalE, harm to warm)"},
         ]
         qop = [CommitOperationAdd(f"feeds/qri/{ts}.jsonl",
-                  (json.dumps(qri_digest, ensure_ascii=False) + "\n").encode())]
+                  (jdumps(qri_digest, ensure_ascii=False) + "\n").encode())]
         try:
             api.create_commit(HF_REPO, operations=qop, commit_message=f"multidog qri {ts}", repo_type="dataset")
         except Exception as e:
@@ -172,7 +179,7 @@ def main() -> None:
             {"dim": "nate", "essay": "the roots of optimism", "key": "transformability over probability, hope needs one viable action"},
         ]
         nop = [CommitOperationAdd(f"feeds/nate/{ts}.jsonl",
-                  (json.dumps(nate_canon, ensure_ascii=False) + "\n").encode())]
+                  (jdumps(nate_canon, ensure_ascii=False) + "\n").encode())]
         try:
             api.create_commit(HF_REPO, operations=nop, commit_message=f"multidog nate {ts}", repo_type="dataset")
         except Exception as e:
