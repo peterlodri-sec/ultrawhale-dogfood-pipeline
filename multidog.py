@@ -163,6 +163,21 @@ def main() -> None:
         except Exception as e:
             print(f"  ! qri: {e}")
 
+
+        # the nate-canon thread: the five absorbed essays, digested on the cycle
+        nate_canon = [
+            {"dim": "nate", "essay": "rehearsable abstraction", "key": "the quoted term stays in the loop"},
+            {"dim": "nate", "essay": "the residual channel", "key": "differences feed coordinates, residuals feed differences"},
+            {"dim": "nate", "essay": "holocoordinates", "key": "four independent warrants, the winding no chart rows"},
+            {"dim": "nate", "essay": "the roots of optimism", "key": "transformability over probability, hope needs one viable action"},
+        ]
+        nop = [CommitOperationAdd(f"feeds/nate/{ts}.jsonl",
+                  (json.dumps(nate_canon, ensure_ascii=False) + "\n").encode())]
+        try:
+            api.create_commit(HF_REPO, operations=nop, commit_message=f"multidog nate {ts}", repo_type="dataset")
+        except Exception as e:
+            print(f"  ! nate: {e}")
+
         if once:
             break
         time.sleep(FEED_SECS)
