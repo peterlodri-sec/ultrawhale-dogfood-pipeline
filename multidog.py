@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["huggingface-hub>=0.23", "simdjson"]
+# dependencies = ["huggingface-hub>=0.23"]
 # ///
 """multidog.py — multi-dimensional dogfeeding into PeetPedro/ultrawhale-dogfood.
 
