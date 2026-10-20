@@ -109,6 +109,7 @@ def cmd_babilon(args: argparse.Namespace) -> int:
     setup_logging(component="babilon")
 
     import sys
+
     repo_root = Path(__file__).resolve().parent.parent.parent
     sys.path.insert(0, str(repo_root))
     from babilon_quant_dogfood import generate_babilon_dogfood, recursive_dogfood_loop
@@ -126,6 +127,29 @@ def cmd_babilon(args: argparse.Namespace) -> int:
             upload=args.upload,
             hf_repo=args.repo,
         )
+    return 0
+
+
+def cmd_sanctuary(args: argparse.Namespace) -> int:
+    """Collect multi-node Memnet Compute Sanctuary dogfood across all available compute."""
+    import json
+
+    from ultrawhale.sanctuary import collect_all_compute_dogfood
+
+    setup_logging(component="sanctuary")
+    bundle = collect_all_compute_dogfood(
+        llm_host=args.host,
+        llm_model=args.model,
+        include_llm=not args.no_llm,
+    )
+    out_path = Path(args.output)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(
+        "\n".join(json.dumps(r, ensure_ascii=False) for r in bundle["all_rows"]) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps(bundle["summary"], indent=2))
+    print(f"Wrote {len(bundle['all_rows'])} sanctuary dogfood records → {out_path}")
     return 0
 
 
@@ -208,6 +232,17 @@ def main() -> None:
     tailnet_parser.add_argument("--port", type=int, default=None)
     tailnet_parser.add_argument("--lines", type=int, default=None)
     tailnet_parser.set_defaults(func=cmd_tailnet_status)
+
+    # --- sanctuary ---
+    sanc_parser = subparsers.add_parser(
+        "sanctuary",
+        help="Collect Memnet 0o0-SSU + SpherePop dogfood across all available compute nodes",
+    )
+    sanc_parser.add_argument("--output", default="dogfeed_parallel/sanctuary_all_compute.jsonl")
+    sanc_parser.add_argument("--host", default=None, help="Sanctuary LLM host (default: http://127.0.0.1:11435)")
+    sanc_parser.add_argument("--model", default="aye-qwen36:35b-16k", help="Sanctuary LLM model")
+    sanc_parser.add_argument("--no-llm", action="store_true", help="Skip M1 Max Ollama Q&A synthesis")
+    sanc_parser.set_defaults(func=cmd_sanctuary)
 
     args = parser.parse_args()
 

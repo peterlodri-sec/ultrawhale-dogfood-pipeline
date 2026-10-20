@@ -146,6 +146,40 @@ def upload_dogfeed(
     return uploaded
 
 
+def upload_jsonl(
+    file_path: str | Path,
+    hf_repo: str | None = None,
+    hf_token: str | None = None,
+) -> bool:
+    """Upload a single JSONL file to a HuggingFace dataset repository."""
+    cfg = Config()
+    repo = hf_repo or cfg.hf_repo
+    token = hf_token or cfg.hf_token
+    if not token:
+        logger.error("HF_TOKEN not set — cannot upload JSONL file")
+        return False
+
+    p = Path(file_path)
+    if not p.exists() or p.stat().st_size == 0:
+        return False
+
+    api = HfApi()
+    ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    api.create_commit(
+        repo_id=repo,
+        repo_type="dataset",
+        operations=[
+            CommitOperationAdd(
+                path_in_repo=p.name,
+                path_or_fileobj=p.read_bytes(),
+            )
+        ],
+        commit_message=f"upload: {p.name} (ultrawhale pipeline) [{ts}]",
+        token=token,
+    )
+    return True
+
+
 if __name__ == "__main__":
     import argparse
 

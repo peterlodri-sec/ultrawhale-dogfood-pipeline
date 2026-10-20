@@ -15,15 +15,18 @@ loop is resumable, non-destructive, honest. When a dimension has no new rows,
 the ±3 empty-frame NAND fuse fires so the oscillator carrier wave never starves.
 
 Dimensions:
-  music           — music.vaked.dev/.dogfeed-music.jsonl
-  laps            — training-pipeline data/backyard108-laps.jsonl
-  atlas           — lissajoverse data/atlas.jsonl
-  vault           — 8b-is raw_research digest: new/updated notes, one row each
-  nand_oscillator — 5-stage cross-coupled {−1, 0, +1} NAND ring + ±3 empty-frame fuse
-  zoneinn         — 8b-is/zoneInn & zoneinn.vaked.dev radio dial + Bluetooth telemetry
-  qri             — qualia-research digest
-  nate            — nate-canon essays digest
-  telemetry       — a heartbeat row per run
+  music            — music.vaked.dev/.dogfeed-music.jsonl
+  laps             — training-pipeline data/backyard108-laps.jsonl
+  atlas            — lissajoverse data/atlas.jsonl
+  vault            — 8b-is raw_research digest: new/updated notes, one row each
+  nand_oscillator  — 5-stage cross-coupled {−1, 0, +1} NAND ring + ±3 empty-frame fuse
+  zoneinn          — 8b-is/zoneInn & zoneinn.vaked.dev radio dial + Bluetooth telemetry
+  memnet_sanctuary — 4-node MEMNET/1.0 0o0-SSU + SpherePop ((( <( ? ~ ! @ > )> ))) compute sanctuary
+                     (m1-max-64gb, dev-main-m3, galaxy-tab-s9-ultra, blu-g75) + M1 Max Q&A synthesis
+  babilon          — Babilon quant-dog-v1 Xoshiro128** baby-babble translation pairs
+  qri              — qualia-research digest
+  nate             — nate-canon essays digest
+  telemetry        — a heartbeat row per run
 
 Usage (from the ultrawhale-dogfood-pipeline dir):
   HF_TOKEN=… uv run multidog.py --once
@@ -319,6 +322,40 @@ def main() -> None:
         ]
         ops.append(CommitOperationAdd(f"feeds/zoneinn/{ts}.jsonl", to_jsonl(zoneinn_rows)))
         meta["zoneinn"] = "1 studio snapshot (Soundcore Select 4 GO + 4 stations)"
+
+        # 4b. memnet_sanctuary dimension (all 4 compute nodes: m1-max-64gb, dev-main-m3, galaxy-tab-s9-ultra, blu-g75)
+        sys.path.insert(0, str(HERE / "src"))
+        sys.path.insert(0, str(HERE))
+        try:
+            from ultrawhale.sanctuary import collect_all_compute_dogfood
+
+            sanc_bundle = collect_all_compute_dogfood(include_llm=True)
+            sanc_rows = sanc_bundle["all_rows"]
+            sanc_summary = sanc_bundle["summary"]
+            ops.append(
+                CommitOperationAdd(f"feeds/memnet_sanctuary/{ts}.jsonl", to_jsonl(sanc_rows))
+            )
+            meta["memnet_sanctuary"] = (
+                f"{len(sanc_rows)} rows ({sanc_summary['total_nodes']} nodes, "
+                f"{sanc_summary['live_wire_daemons']} live wire daemons, "
+                f"{sanc_summary['total_cores']}c/{sanc_summary['total_ram_mb']}MB, "
+                f"{sanc_summary['llm_qa_pairs']} M1-Max LLM Q&A)"
+            )
+        except Exception as e:  # noqa: BLE001
+            meta["memnet_sanctuary"] = f"skipped: {e}"
+
+        # 4c. babilon quant-dog-v1 dimension
+        try:
+            from babilon_quant_dogfood import generate_babilon_dogfood
+
+            bab_tmp = HERE / "dogfeed_parallel" / f"babilon_multidog_{ts}.jsonl"
+            bab_tmp.parent.mkdir(parents=True, exist_ok=True)
+            bab_rows = generate_babilon_dogfood(num_cycles=16, output_path=str(bab_tmp), eye_seed=True)
+            ops.append(CommitOperationAdd(f"feeds/babilon/{ts}.jsonl", to_jsonl(bab_rows)))
+            avg_bab_q = sum(r["quality_score"] for r in bab_rows) / len(bab_rows)
+            meta["babilon"] = f"{len(bab_rows)} quant-dog-v1 pairs (avg_q={avg_bab_q:.3f})"
+        except Exception as e:  # noqa: BLE001
+            meta["babilon"] = f"skipped: {e}"
 
         # 5. qri & nate-canon threads (bundled into the same atomic commit)
         qri_digest = [

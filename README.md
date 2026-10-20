@@ -159,14 +159,29 @@ All settings are configured via environment variables — no config files needed
 
 ```bash
 ultrawhale generate   # Generate Q&A pairs
+ultrawhale sanctuary  # Collect Memnet 0o0-SSU + SpherePop dogfood across all 4 compute nodes
+ultrawhale babilon    # Generate Babilon quant-dog-v1 Xoshiro128** translation pairs
 ultrawhale upload     # Upload dogfeed to HuggingFace
 ultrawhale compress   # Post-process with kompress-v8
 ultrawhale status     # Pipeline health check
+
+uv run multidog.py --once  # Multi-dimensional dogfeeder (NAND oscillator + Memnet Sanctuary + zoneInn + Babilon)
 
 task start            # E2E: insert SD → burn Pi OS → sign dataset → configure
 task pi:check         # Check Pi burner dependencies
 task pi:burn          # Download Pi OS, sign, dual-burn SD card
 ```
+
+## Multi-Node Compute Sanctuary (`ultrawhale sanctuary` + `multidog.py`)
+
+`ultrawhale sanctuary` and `multidog.py` orchestrate distributed dogfood collection across all available hardware nodes using **MEMNET/1.0** `0o0-SSU` (`Kompress-Super-Ultra`) + **SpherePop** (`((( <( ? ~ ! @ > )> )))`, `#Commit = #ValidWitness`):
+
+| Node ID | SoC / Arch | Cores | RAM | Sanctuary Endpoint | Role |
+|---|---|---:|---:|---|---|
+| `m1-max-64gb` | Apple M1 Max (`aarch64-apple-darwin`) | 10 | 64 GB | `169.254.180.64:8788` (Thunderbolt 10Gbps) | Live `0o0-SSU` Sanctuary Daemon + Ollama `aye-qwen36:35b-16k` Q&A synthesis |
+| `dev-main-m3` | Apple M3 (`aarch64-apple-darwin`) | 8 | 24 GB | `127.0.0.1:8789` / `192.168.11.9:8789` | Live `0o0-SSU` Sanctuary Daemon + Ternary NAND Ring Oscillator + Babilon + Multidog |
+| `galaxy-tab-s9-ultra` | Snapdragon 8 Gen 2 for Galaxy (`SM-X910`) | 8 | 12 GB | `192.168.11.12:8788` / `169.254.93.206:8788` (`en15`) | SpherePop `0o0-SSU` edge capsule receiver |
+| `blu-g75` | MediaTek Helio G85 (`MT6769V/CB` / `mt6768`, Android 15) | 8 | 4 GB | `192.168.11.24:8788` (Wi-Fi + USB ADB `1010305026000644`) | Native Android 15 ARM64 `/data/local/tmp/memnet` Sanctuary Daemon |
 
 ## Development
 
