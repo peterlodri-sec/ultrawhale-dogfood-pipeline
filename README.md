@@ -174,14 +174,15 @@ task pi:burn          # Download Pi OS, sign, dual-burn SD card
 
 ## Multi-Node Compute Sanctuary (`ultrawhale sanctuary` + `multidog.py`)
 
-`ultrawhale sanctuary` and `multidog.py` orchestrate distributed dogfood collection across all available hardware nodes using **MEMNET/1.0** `0o0-SSU` (`Kompress-Super-Ultra`) + **SpherePop** (`((( <( ? ~ ! @ > )> )))`, `#Commit = #ValidWitness`):
+`ultrawhale sanctuary` and `multidog.py` orchestrate distributed dogfood collection across all 5 available hardware nodes (`42` cores / `118,481 MB` RAM) using **MEMNET/1.0** `0o0-SSU` (`Kompress-Super-Ultra`) + **SpherePop** (`((( <( ? ~ ! @ > )> )))`, `#Commit = #ValidWitness`, `~=== SHOW-ME-STATE-MISSOURI{(ALEX,CHRIS)}+1~ <3 {<3,<3,<3}`):
 
 | Node ID | SoC / Arch | Cores | RAM | Sanctuary Endpoint | Role |
 |---|---|---:|---:|---|---|
 | `m1-max-64gb` | Apple M1 Max (`aarch64-apple-darwin`) | 10 | 64 GB | `169.254.180.64:8788` (Thunderbolt 10Gbps) | Live `0o0-SSU` Sanctuary Daemon + Ollama `aye-qwen36:35b-16k` Q&A synthesis |
 | `dev-main-m3` | Apple M3 (`aarch64-apple-darwin`) | 8 | 24 GB | `127.0.0.1:8789` / `192.168.11.9:8789` | Live `0o0-SSU` Sanctuary Daemon + Ternary NAND Ring Oscillator + Babilon + Multidog |
-| `galaxy-tab-s9-ultra` | Snapdragon 8 Gen 2 for Galaxy (`SM-X910`) | 8 | 12 GB | `192.168.11.12:8788` / `169.254.93.206:8788` (`en15`) | SpherePop `0o0-SSU` edge capsule receiver |
-| `blu-g75` | MediaTek Helio G85 (`MT6769V/CB` / `mt6768`, Android 15) | 8 | 4 GB | `192.168.11.24:8788` (Wi-Fi + USB ADB `1010305026000644`) | Native Android 15 ARM64 `/data/local/tmp/memnet` Sanctuary Daemon |
+| `galaxy-s24-ultra` | Snapdragon 8 Gen 3 for Galaxy (`SM8650-AC` / `SM-S928U1` / `R5CWC3C3FXA`) | 8 | 12 GB | `192.168.11.22:36347/:53601/:8788` + `127.0.0.1:8792` | Flagship Adreno 750 + Hexagon NPU Sanctuary (`SHOW-ME-STATE-MISSOURI{(ALEX,CHRIS)}+1~`) |
+| `galaxy-tab-s9-ultra` | Snapdragon 8 Gen 2 for Galaxy (`SM-X910` / `R52X104QZWE`) | 8 | 12 GB | `169.254.93.206:8790` (`en15`) / `192.168.11.12:8788` | SpherePop `0o0-SSU` edge capsule responder |
+| `blu-g75` | MediaTek Helio G85 (`MT6769V/CB` / `mt6768`, Android 15) | 8 | 4 GB | `127.0.0.1:8791` (USB ADB `1010305026000644`) + `192.168.11.24:8788` | Native Android 15 ARM64 `/data/local/tmp/memnet` Sanctuary Daemon |
 
 ## Development
 

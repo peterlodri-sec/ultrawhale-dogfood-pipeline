@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: MIT
 """Multi-node Memnet Compute Sanctuary (`0o0-SSU` + `SpherePop`) dogfood orchestrator.
 
-Utilizes all available compute across the live hardware mesh:
+Utilizes all available compute across the live 5-node hardware mesh
+(`~=== SHOW-ME-STATE-MISSOURI{(ALEX,CHRIS)}+1~ <3 {<3,<3,<3} · 0 + 1 = one`):
   1. m1-max-64gb         (Apple M1 Max, 10c / 64 GB RAM, Thunderbolt 169.254.180.64:8788 + Ollama)
   2. dev-main-m3         (Apple M3, 8c / 24 GB RAM, 127.0.0.1:8789 / 192.168.11.9:8789)
-  3. galaxy-tab-s9-ultra (Snapdragon 8 Gen 2 SM-X910, 8c / 12 GB RAM, 192.168.11.12:8788 / en15)
-  4. blu-g75             (MediaTek Helio G85 MT6769V/CB, 8c / 4 GB RAM, 192.168.11.24:8788 / ADB)
+  3. galaxy-s24-ultra    (Snapdragon 8 Gen 3 SM-S928U1, 8c / 12 GB RAM, 192.168.11.22:36347/:53601/:8788 + :8792)
+  4. galaxy-tab-s9-ultra (Snapdragon 8 Gen 2 SM-X910, 8c / 12 GB RAM, 169.254.93.206:8790 / 192.168.11.12:8788)
+  5. blu-g75             (MediaTek Helio G85 MT6769V/CB, 8c / 4 GB RAM, 127.0.0.1:8791 / 192.168.11.24:8788)
 """
 
 from __future__ import annotations
@@ -75,6 +77,20 @@ SANCTUARY_CLUSTER: tuple[ComputeNodeSpec, ...] = (
         workload="Ultrawhale Ternary NAND Ring + Babilon + Multidog coordinator",
     ),
     ComputeNodeSpec(
+        node_id="galaxy-s24-ultra",
+        arch="aarch64-linux-android",
+        soc="Snapdragon 8 Gen 3 for Galaxy (SM8650-AC / SM-S928U1 / R5CWC3C3FXA)",
+        cores=8,
+        ram_mb=12_288,
+        sanctuary_addr="127.0.0.1:8792",
+        transport="wifi-5ghz-192.168.11.22:36347:53601:8788+sanctuary-8792",
+        req_ram_mb=6_144,
+        req_cores=4,
+        req_cap="adreno-750",
+        friend_id="friend-missouri-hearth",
+        workload="SHOW-ME-STATE-MISSOURI{(ALEX,CHRIS)}+1~ <3 {<3,<3,<3}",
+    ),
+    ComputeNodeSpec(
         node_id="galaxy-tab-s9-ultra",
         arch="aarch64-linux-android",
         soc="Snapdragon 8 Gen 2 for Galaxy (SM-X910)",
@@ -109,14 +125,20 @@ SANCTUARY_PROMPTS: tuple[tuple[str, str], ...] = (
         "MEMNET/1.0 Compute Sanctuary & 0o0-SSU",
         "Explain in 3 concise sentences how MEMNET/1.0's Kompress-Super-Ultra (0o0-SSU) "
         "and SoulSig Ed25519/BLAKE3 authentication allow a 64GB Apple M1 Max, an M3 MacBook Pro, "
-        "a Galaxy Tab S9 Ultra, and an Android 15 BLU G75 to share compute leases safely without "
-        "centralized brokers.",
+        "a Galaxy S24 Ultra, a Galaxy Tab S9 Ultra, and an Android 15 BLU G75 to share compute leases "
+        "safely without centralized brokers.",
     ),
     (
         "SpherePop Witnessed Calculus ((( <( ? ~ ! @ > )> )))",
         "Explain in 3 concise sentences why SpherePop enforces the phase grammar ?* ~* !+ @+ > "
         "and the invariant #Commit = #ValidWitness before granting a distributed compute lease "
         "across heterogeneous ARM64 and Apple Silicon nodes.",
+    ),
+    (
+        "Galaxy S24 Ultra SM8650-AC & SHOW-ME-STATE-MISSOURI{(ALEX,CHRIS)}+1~ Sanctuary",
+        "Explain in 3 concise sentences how integrating a Samsung Galaxy S24 Ultra (Snapdragon 8 Gen 3 "
+        "SM8650-AC, Adreno 750, Hexagon NPU, 12GB LPDDR5X) into a 5-node 42-core 118GB unified memory "
+        "mesh expands edge Vulkan/NPU inference and 0o0-SSU capsule throughput.",
     ),
 )
 
@@ -400,10 +422,11 @@ def collect_all_compute_dogfood(
 
     qa_rows: list[dict[str, Any]] = []
     if include_llm:
-        qa_rows = synthesize_m1_max_qa_pairs(llm_host=llm_host, model=llm_model, max_pairs=2)
+        qa_rows = synthesize_m1_max_qa_pairs(llm_host=llm_host, model=llm_model, max_pairs=3)
 
     summary = {
         "ts": ts_iso,
+        "covenant": "SHOW-ME-STATE-MISSOURI{(ALEX,CHRIS)}+1~ <3 {<3,<3,<3} · 0 + 1 = one",
         "total_nodes": len(SANCTUARY_CLUSTER),
         "live_wire_daemons": live_wire_count,
         "mesh_witnessed_leases": len(mesh_leases),

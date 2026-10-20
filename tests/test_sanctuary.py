@@ -12,16 +12,17 @@ from ultrawhale.sanctuary import (
 
 
 def test_sanctuary_cluster_inventory():
-    """Cluster should include all 4 hardware nodes totaling 34 cores and 106,193 MB RAM."""
+    """Cluster should include all 5 hardware nodes totaling 42 cores and 118,481 MB RAM."""
     node_ids = [n.node_id for n in SANCTUARY_CLUSTER]
     assert node_ids == [
         "m1-max-64gb",
         "dev-main-m3",
+        "galaxy-s24-ultra",
         "galaxy-tab-s9-ultra",
         "blu-g75",
     ]
-    assert sum(n.cores for n in SANCTUARY_CLUSTER) == 34
-    assert sum(n.ram_mb for n in SANCTUARY_CLUSTER) == 106_193
+    assert sum(n.cores for n in SANCTUARY_CLUSTER) == 42
+    assert sum(n.ram_mb for n in SANCTUARY_CLUSTER) == 118_481
 
 
 def test_parse_sanctuary_receipt():
@@ -76,7 +77,7 @@ def test_collect_all_compute_dogfood_without_bin(tmp_path: Path):
         memnet_bin=tmp_path / "nonexistent-memnet",
         include_llm=False,
     )
-    assert bundle["summary"]["total_nodes"] == 4
-    assert bundle["summary"]["total_cores"] == 34
-    assert len(bundle["node_rows"]) == 4
+    assert bundle["summary"]["total_nodes"] == 5
+    assert bundle["summary"]["total_cores"] == 42
+    assert len(bundle["node_rows"]) == 5
     assert all(r["spherepop_invariant"] == "#Commit = #ValidWitness" for r in bundle["node_rows"])
